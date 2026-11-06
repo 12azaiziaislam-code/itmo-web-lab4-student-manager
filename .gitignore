@@ -1,0 +1,38 @@
+# Java / Maven
+target/
+*.class
+*.jar
+*.war
+
+# Node / Frontend
+node_modules/
+dist/
+dist-ssr/
+*.local
+.vite/
+
+# IDEs & Editors
+.idea/
+.vscode/
+*.iml
+.settings/
+.project/
+.classpath
+
+# Environment & Secrets
+.env
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation & Study Materials
+*.pdf
+
+# Aggregator Scripts & Bundles
+combine_code.*
+combine_code.bat
+combine_code.ps1
+combined_codebase.txt
+full_project_code.txt
