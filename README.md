@@ -1,9 +1,8 @@
 # ITMO University - Web Programming Lab №4: Student Management System (Vue 3 + Pinia + RxJS + Spring Boot 3)
 
 ## Overview
-This repository contains the foundational baseline and implementation for **ITMO University Web Programming Course - Laboratory Work №4**. 
-
-The project is an enterprise-grade **Student Management System** developed with a decoupled microservice-ready architecture featuring a reactive Single Page Application (SPA) frontend and a secure RESTful backend.
+ITMO University Web Programming Course - Laboratory Work №4.
+A student dormitory management web application built with Vue 3 (Composition API, Pinia, RxJS) and Spring Boot 3 running in Docker containers.
 
 ---
 
@@ -12,17 +11,17 @@ The project is an enterprise-grade **Student Management System** developed with 
 ### Backend
 - **Framework:** Spring Boot 3 (Java 17+)
 - **Data Access:** jOOQ (Type-safe SQL query generation and execution)
-- **Database:** PostgreSQL 17
+- **Database:** PostgreSQL 16
 - **Database Migrations:** Flyway
 - **Security:** Spring Security 6 + JWT (Stateless token-based authentication with Access and Refresh tokens)
 - **Validation:** Jakarta Validation (`@Valid`, constraints)
 - **API Documentation:** SpringDoc OpenAPI 3 / Swagger UI
 
-### Frontend (To be scaffolded in Lab 4)
+### Frontend
 - **Framework:** Vue 3 (Composition API, `<script setup>`)
 - **State Management:** Pinia
 - **Reactive Stream Handling:** RxJS
-- **Bundler & Tooling:** Vite + TypeScript / Modern JavaScript
+- **Bundler & Tooling:** Vite + Modern JavaScript
 
 ---
 

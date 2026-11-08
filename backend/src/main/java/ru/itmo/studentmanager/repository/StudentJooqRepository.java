@@ -74,7 +74,7 @@ public class StudentJooqRepository implements StudentRepository {
                 conditions.add(field("full_name", String.class).containsIgnoreCase(name.trim()));
             }
             if (group != null && !group.trim().isEmpty()) {
-                conditions.add(field("student_group", String.class).equalIgnoreCase(group.trim()));
+                conditions.add(field("student_group", String.class).containsIgnoreCase(group.trim()));
             }
             if (dormitory != null && !dormitory.trim().isEmpty()) {
                 try {
