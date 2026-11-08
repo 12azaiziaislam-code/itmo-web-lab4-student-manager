@@ -2,9 +2,6 @@ import { onMounted, onUnmounted } from 'vue';
 import { Subject, from, EMPTY, debounceTime, distinctUntilChanged, switchMap, catchError } from 'rxjs';
 import { useStudentStore } from '../stores/students';
 
-/**
- * RxJS Reactive Search and Filtering Pipeline for Student Dashboard
- */
 export function useStudentSearch() {
   const studentStore = useStudentStore();
   const searchSubject$ = new Subject();

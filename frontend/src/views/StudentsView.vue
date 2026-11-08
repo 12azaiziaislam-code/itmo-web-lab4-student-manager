@@ -1,6 +1,5 @@
 <template>
   <div class="students-view">
-    <!-- Top Action Bar -->
     <div class="view-header">
       <div>
         <h2>Students Dashboard</h2>
@@ -15,7 +14,6 @@
       </button>
     </div>
 
-    <!-- Notification Alert Banner -->
     <div
       v-if="studentStore.notification"
       class="notification-banner"
@@ -25,10 +23,8 @@
       <button class="btn-dismiss" @click="studentStore.clearNotification">&times;</button>
     </div>
 
-    <!-- Reactive Search & Filter Toolbar -->
     <div class="filter-card">
       <div class="filter-grid">
-        <!-- Full Name Search -->
         <div class="filter-item">
           <label>Full Name</label>
           <input
@@ -39,7 +35,6 @@
           />
         </div>
 
-        <!-- Group Filter -->
         <div class="filter-item">
           <label>Group</label>
           <input
@@ -50,7 +45,6 @@
           />
         </div>
 
-        <!-- Dormitory Filter -->
         <div class="filter-item">
           <label>Dormitory #</label>
           <input
@@ -63,7 +57,6 @@
           />
         </div>
 
-        <!-- Room Filter -->
         <div class="filter-item">
           <label>Room #</label>
           <input
@@ -76,7 +69,6 @@
           />
         </div>
 
-        <!-- ISU ID Filter -->
         <div class="filter-item">
           <label>ISU ID</label>
           <input
@@ -97,7 +89,6 @@
       </div>
     </div>
 
-    <!-- Data Table Container -->
     <div class="table-container">
       <div v-if="studentStore.loading" class="loading-state">
         <div class="spinner"></div>
@@ -133,11 +124,16 @@
             </th>
             <th>International</th>
             <th>Notes</th>
-            <th v-if="authStore.isAdmin" class="actions-header">Actions</th>
+            <th class="actions-header">Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="student in studentStore.students" :key="student.isuId">
+          <tr
+            v-for="student in studentStore.students"
+            :key="student.isuId"
+            class="clickable-row"
+            @click="openDossier(student)"
+          >
             <td class="isu-cell">
               <strong>{{ student.isuId }}</strong>
             </td>
@@ -159,34 +155,41 @@
             <td class="notes-cell" :title="student.notes || ''">
               {{ student.notes || '-' }}
             </td>
-            <td v-if="authStore.isAdmin" class="actions-cell">
+            <td class="actions-cell">
               <button
-                class="btn-action btn-edit"
-                title="Edit Student"
-                @click="openEditModal(student)"
+                class="btn-action btn-view"
+                title="View Dossier"
+                @click.stop="openDossier(student)"
               >
-                Edit
+                View
               </button>
-              <button
-                class="btn-action btn-delete"
-                title="Delete Student"
-                @click="promptDelete(student)"
-              >
-                Delete
-              </button>
+              <template v-if="authStore.isAdmin">
+                <button
+                  class="btn-action btn-edit"
+                  title="Edit Student"
+                  @click.stop="openEditModal(student)"
+                >
+                  Edit
+                </button>
+                <button
+                  class="btn-action btn-delete"
+                  title="Delete Student"
+                  @click.stop="promptDelete(student)"
+                >
+                  Delete
+                </button>
+              </template>
             </td>
           </tr>
         </tbody>
       </table>
 
-      <!-- Empty State -->
       <div v-else class="empty-state">
         <p class="empty-title">No students found</p>
         <p class="empty-desc">Try adjusting your search criteria or resetting filters.</p>
         <button class="btn-secondary" @click="handleResetFilters">Clear Filters</button>
       </div>
 
-      <!-- Pagination Toolbar -->
       <div class="pagination-bar" v-if="studentStore.students.length > 0 || studentStore.currentPage > 1">
         <div class="limit-selector">
           <label>Rows per page:</label>
@@ -218,7 +221,14 @@
       </div>
     </div>
 
-    <!-- Student Add / Edit Modal -->
+    <StudentDossierModal
+      :is-open="isDossierOpen"
+      :student="selectedDossier"
+      :is-admin="authStore.isAdmin"
+      @close="isDossierOpen = false"
+      @edit="handleEditFromDossier"
+    />
+
     <StudentModal
       :is-open="isModalOpen"
       :student="editingStudent"
@@ -226,7 +236,6 @@
       @saved="onStudentSaved"
     />
 
-    <!-- Delete Confirmation Modal -->
     <ConfirmModal
       :is-open="isConfirmOpen"
       title="Delete Student"
@@ -245,13 +254,13 @@ import { useAuthStore } from '../stores/auth';
 import { useStudentStore } from '../stores/students';
 import { useStudentSearch } from '../composables/useStudentSearch';
 import StudentModal from '../components/StudentModal.vue';
+import StudentDossierModal from '../components/StudentDossierModal.vue';
 import ConfirmModal from '../components/ConfirmModal.vue';
 
 const authStore = useAuthStore();
 const studentStore = useStudentStore();
 const { emitSearch } = useStudentSearch();
 
-// Local filter model connected to RxJS stream
 const filterState = reactive({
   fullName: '',
   group: '',
@@ -260,11 +269,12 @@ const filterState = reactive({
   isuId: ''
 });
 
-// Modal states
 const isModalOpen = ref(false);
 const editingStudent = ref(null);
 const isConfirmOpen = ref(false);
 const studentToDelete = ref(null);
+const isDossierOpen = ref(false);
+const selectedDossier = ref(null);
 
 const confirmMessage = computed(() => {
   if (!studentToDelete.value) return '';
@@ -327,7 +337,16 @@ function formatDate(dateStr) {
   }
 }
 
-// Modal Handlers
+function openDossier(student) {
+  selectedDossier.value = student;
+  isDossierOpen.value = true;
+}
+
+function handleEditFromDossier(student) {
+  isDossierOpen.value = false;
+  openEditModal(student);
+}
+
 function openAddModal() {
   editingStudent.value = null;
   isModalOpen.value = true;
@@ -386,7 +405,6 @@ async function handleConfirmDelete() {
   background-color: var(--primary-hover);
 }
 
-/* Notification Banner */
 .notification-banner {
   display: flex;
   justify-content: space-between;
@@ -413,7 +431,6 @@ async function handleConfirmDelete() {
   padding: 0 4px;
 }
 
-/* Filter Card */
 .filter-card {
   background-color: var(--surface-color);
   border: 1px solid var(--border);
@@ -469,7 +486,6 @@ async function handleConfirmDelete() {
   background-color: var(--border);
 }
 
-/* Table Container */
 .table-container {
   background-color: var(--surface-color);
   border: 1px solid var(--border);
@@ -505,8 +521,12 @@ async function handleConfirmDelete() {
   border-bottom: 1px solid var(--border);
   color: var(--text-main);
 }
-.student-table tr:hover {
-  background-color: rgba(255, 255, 255, 0.02);
+.clickable-row {
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+.clickable-row:hover {
+  background-color: rgba(255, 255, 255, 0.04);
 }
 .isu-cell {
   font-family: monospace;
@@ -560,6 +580,15 @@ async function handleConfirmDelete() {
   margin-left: 6px;
   border-radius: 4px;
 }
+.btn-view {
+  background-color: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+}
+.btn-view:hover {
+  background-color: #38bdf8;
+  color: #0f172a;
+}
 .btn-edit {
   background-color: rgba(59, 130, 246, 0.15);
   border: 1px solid var(--primary);
@@ -579,7 +608,6 @@ async function handleConfirmDelete() {
   color: white;
 }
 
-/* Loading & Empty States */
 .loading-state, .empty-state {
   padding: 48px 24px;
   text-align: center;
@@ -608,7 +636,6 @@ async function handleConfirmDelete() {
   font-size: 0.9rem;
 }
 
-/* Pagination */
 .pagination-bar {
   display: flex;
   justify-content: space-between;

@@ -8,7 +8,6 @@
 
       <form @submit.prevent="handleSubmit" class="modal-form">
         <div class="form-grid">
-          <!-- ISU ID -->
           <div class="form-group">
             <label for="isuId">ISU ID <span class="required">*</span></label>
             <input
@@ -24,7 +23,6 @@
             <small class="hint-msg" v-else-if="!isEditMode">Exactly 6 digits</small>
           </div>
 
-          <!-- Full Name -->
           <div class="form-group">
             <label for="fullName">Full Name <span class="required">*</span></label>
             <input
@@ -38,7 +36,6 @@
             <small class="error-msg" v-if="errors.fullName">{{ errors.fullName }}</small>
           </div>
 
-          <!-- Student Group -->
           <div class="form-group">
             <label for="group">Group <span class="required">*</span></label>
             <input
@@ -53,7 +50,6 @@
             <small class="hint-msg" v-else>Format: Letter + 4 digits (e.g. P3278)</small>
           </div>
 
-          <!-- Dormitory Number -->
           <div class="form-group">
             <label for="dormitoryNumber">Dormitory # <span class="required">*</span></label>
             <input
@@ -68,7 +64,6 @@
             <small class="error-msg" v-if="errors.dormitoryNumber">{{ errors.dormitoryNumber }}</small>
           </div>
 
-          <!-- Room Number -->
           <div class="form-group">
             <label for="room">Room <span class="required">*</span></label>
             <input
@@ -83,7 +78,6 @@
             <small class="error-msg" v-if="errors.room">{{ errors.room }}</small>
           </div>
 
-          <!-- Accommodation Period -->
           <div class="form-group">
             <label for="accommodationPeriod">Accommodation Date <span class="required">*</span></label>
             <input
@@ -96,7 +90,6 @@
           </div>
         </div>
 
-        <!-- International Student Checkbox -->
         <div class="form-checkbox">
           <label>
             <input v-model="form.isInternational" type="checkbox" />
@@ -104,7 +97,6 @@
           </label>
         </div>
 
-        <!-- Notes -->
         <div class="form-group">
           <label for="notes">Notes (optional)</label>
           <textarea

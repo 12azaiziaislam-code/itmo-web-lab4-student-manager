@@ -7,7 +7,7 @@ const api = axios.create({
   timeout: 10000
 });
 
-// Request Interceptor: حقن التوكن
+// Attach authorization header
 api.interceptors.request.use((config) => {
   const auth = useAuthStore();
   if (auth.accessToken) {
@@ -16,7 +16,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Response Interceptor: التجديد الصامت للتوكن
+// Silent token refresh on 401
 let refreshPromise = null;
 
 api.interceptors.response.use(
