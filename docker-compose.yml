@@ -1,29 +1,57 @@
-version: '3.8'
-
 services:
   postgres:
-    image: postgres:17-alpine
-    container_name: student_db
+    image: postgres:16-alpine
+    container_name: itmo_lab4_db
     environment:
-      POSTGRES_DB: student_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
+      POSTGRES_DB: ${POSTGRES_DB:-students}
+      POSTGRES_USER: ${POSTGRES_USER:-students_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-students_pass}
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-students_user} -d ${POSTGRES_DB:-students}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - lab4_net
 
   backend:
-    build: ./backend
-    container_name: student_backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: itmo_lab4_backend
     ports:
       - "8080:8080"
     environment:
-      DB_URL: jdbc:postgresql://postgres:5432/student_db
-      DB_USERNAME: postgres
-      DB_PASSWORD: postgres
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-students}
+      DB_USERNAME: ${POSTGRES_USER:-students_user}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-students_pass}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-students}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-students_user}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-students_pass}
+      JWT_SECRET: ${JWT_SECRET:-my_ultra_secure_secret_key_itmo_lab4_spring_boot_jwt_2026}
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    networks:
+      - lab4_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: itmo_lab4_frontend
+    ports:
+      - "${FRONTEND_PORT:-8081}:80"
+    depends_on:
+      - backend
+    networks:
+      - lab4_net
 
 volumes:
   pgdata:
+
+networks:
+  lab4_net:
+    driver: bridge

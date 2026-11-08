@@ -93,7 +93,7 @@ public class StudentJooqRepository implements StudentRepository {
             }
         }
 
-        String requestedSort = filters != null ? filters.get("sortBy") : null;
+        String requestedSort = (filters != null && filters.get("sortBy") != null) ? filters.get("sortBy") : "isuId";
         String sortColumn = SORT_COLUMNS.getOrDefault(requestedSort, "isu_id");
         String order = filters != null ? filters.getOrDefault("order", "asc") : "asc";
         SortField<?> sortField = "desc".equalsIgnoreCase(order)
@@ -108,6 +108,8 @@ public class StudentJooqRepository implements StudentRepository {
                 if (filters.containsKey("offset")) offset = Integer.parseInt(filters.get("offset"));
             } catch (NumberFormatException ignored) {}
         }
+        limit = Math.max(1, Math.min(limit, 100));
+        offset = Math.max(0, offset);
 
         return dsl.select()
                 .from(table("students"))
@@ -172,7 +174,7 @@ public class StudentJooqRepository implements StudentRepository {
         if (student.room() != null) setStep = setStep.set(field("room"), student.room());
         if (student.accommodationPeriod() != null) setStep = setStep.set(field("accommodation_period"), student.accommodationPeriod());
         if (student.isInternational() != null) setStep = setStep.set(field("is_international"), student.isInternational());
-        if (student.notes() != null) setStep = setStep.set(field("notes"), student.notes());
+        setStep = setStep.set(field("notes"), student.notes());
 
         int updated = setStep.where(field("isu_id").eq(student.isuId())).execute();
         if (updated == 0) {

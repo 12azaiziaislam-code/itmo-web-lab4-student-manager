@@ -36,3 +36,6 @@ combine_code.bat
 combine_code.ps1
 combined_codebase.txt
 full_project_code.txt
+project_bundle*.txt
+
+

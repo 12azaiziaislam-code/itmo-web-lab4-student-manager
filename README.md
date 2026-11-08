@@ -73,22 +73,35 @@ Default configuration variables:
 - `JWT_REFRESH_EXPIRATION_MS`: `604800000` (7 days)
 
 ### 2. Running with Docker Compose
-Start PostgreSQL and the Spring Boot backend service with a single command:
+Start PostgreSQL, Backend, and Frontend services with a single command:
 ```bash
 docker compose up --build -d
 ```
+- **Frontend SPA:** `http://localhost:8081`
+- **Backend API & Swagger UI:** `http://localhost:8080/swagger-ui.html`
 
 To stop containers:
 ```bash
 docker compose down
 ```
 
-### 3. Running Backend Locally
-Ensure PostgreSQL is running locally on port `5432`, then run:
+### 3. Running Locally for Development
+
+**Backend:**
+Ensure PostgreSQL is running on port `5432`, then:
 ```bash
 cd backend
 mvn clean spring-boot:run
 ```
+
+**Frontend:**
+In a separate terminal:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Accessible at `http://localhost:3000` (API calls are proxied to `http://localhost:8080`).
 
 ---
 
@@ -112,3 +125,4 @@ mvn clean spring-boot:run
 ## Default Accounts
 - **Admin:** `admin` / `admin123` (`ADMIN` role)
 - **User:** `student_user` / `user123` (`USER` role)
+

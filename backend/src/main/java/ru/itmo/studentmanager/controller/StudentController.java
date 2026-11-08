@@ -9,6 +9,7 @@ import ru.itmo.studentmanager.dto.StudentResponseDto;
 import ru.itmo.studentmanager.dto.StudentUpdateDto;
 import ru.itmo.studentmanager.service.StudentService;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -29,8 +30,12 @@ public class StudentController {
     }
 
     @PostMapping("/search")
-    public List<StudentResponseDto> queryStudents(@RequestBody(required = false) Map<String, String> filters) {
-        return service.getFilteredStudents(filters);
+    public List<StudentResponseDto> queryStudents(@RequestBody(required = false) Map<String, Object> filters) {
+        Map<String, String> stringFilters = new HashMap<>();
+        if (filters != null) {
+            filters.forEach((k, v) -> stringFilters.put(k, v != null ? v.toString() : null));
+        }
+        return service.getFilteredStudents(stringFilters);
     }
 
     @GetMapping("/{isuId}")
