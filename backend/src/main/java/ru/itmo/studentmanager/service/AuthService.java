@@ -64,11 +64,7 @@ public class AuthService {
         User user = userRepository.findByUsername(dto.username())
                 .orElseThrow(() -> new InvalidCredentialsException("Invalid username or password"));
 
-        boolean matches = passwordEncoder.matches(dto.password(), user.password())
-                || ("admin".equals(user.username()) && ("admin123".equals(dto.password()) || "password".equals(dto.password())))
-                || ("student_user".equals(user.username()) && ("user123".equals(dto.password()) || "password".equals(dto.password())));
-
-        if (!matches) {
+        if (!passwordEncoder.matches(dto.password(), user.password())) {
             throw new InvalidCredentialsException("Invalid username or password");
         }
 
