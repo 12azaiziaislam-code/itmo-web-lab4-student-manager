@@ -89,7 +89,7 @@ public class StudentJooqRepository implements StudentRepository {
                 } catch (NumberFormatException ignored) {}
             }
             if (isuId != null && !isuId.trim().isEmpty()) {
-                conditions.add(field("isu_id", String.class).eq(isuId.trim()));
+                conditions.add(field("isu_id", String.class).containsIgnoreCase(isuId.trim()));
             }
         }
 
