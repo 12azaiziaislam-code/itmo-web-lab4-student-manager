@@ -1,6 +1,5 @@
 <template>
   <template v-if="isOpen">
-    <div class="modal-overlay" @click="$emit('close')"></div>
     <div class="modal">
       <h3>Student Dossier</h3>
 

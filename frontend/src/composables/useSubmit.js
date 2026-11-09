@@ -1,17 +1,16 @@
 import { ref, onUnmounted } from 'vue';
-import { Subject, defer, exhaustMap, finalize, catchError, EMPTY } from 'rxjs';
+import { Subject, from, exhaustMap, finalize } from 'rxjs';
 
-// exhaustMap ignores new submits while the previous one is running
+// while saving, new clicks are ignored
 export function useSubmit(action) {
   const isSubmitting = ref(false);
-  const submit$ = new Subject();
+  const clicks$ = new Subject();
 
-  const subscription = submit$
+  const subscription = clicks$
     .pipe(
-      exhaustMap((args) => {
+      exhaustMap(() => {
         isSubmitting.value = true;
-        return defer(() => action(...args)).pipe(
-          catchError(() => EMPTY),
+        return from(action()).pipe(
           finalize(() => {
             isSubmitting.value = false;
           })
@@ -20,13 +19,10 @@ export function useSubmit(action) {
     )
     .subscribe();
 
-  onUnmounted(() => {
-    subscription.unsubscribe();
-    submit$.complete();
-  });
+  onUnmounted(() => subscription.unsubscribe());
 
-  function submit(...args) {
-    submit$.next(args);
+  function submit() {
+    clicks$.next();
   }
 
   return { isSubmitting, submit };

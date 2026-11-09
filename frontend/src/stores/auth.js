@@ -2,8 +2,6 @@ import { defineStore } from 'pinia';
 import axios from 'axios';
 import api from '../services/api';
 
-const STORAGE_KEYS = ['accessToken', 'refreshToken', 'username', 'role'];
-
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     accessToken: localStorage.getItem('accessToken'),
@@ -39,28 +37,20 @@ export const useAuthStore = defineStore('auth', {
     async fetchProfile(signal) {
       const { data } = await api.get('/users/me', { signal });
       this.profile = data;
-      this.username = data.username;
       this.role = data.role;
-      this.saveToStorage();
-      return data;
+      localStorage.setItem('role', data.role);
     },
 
     setSession(data) {
       this.accessToken = data.accessToken;
-      this.refreshToken = data.refreshToken ?? this.refreshToken;
-      this.username = data.username ?? this.username;
-      this.role = data.role ?? this.role;
-      this.saveToStorage();
-    },
+      this.refreshToken = data.refreshToken;
+      this.username = data.username;
+      this.role = data.role;
 
-    saveToStorage() {
-      for (const key of STORAGE_KEYS) {
-        if (this[key]) {
-          localStorage.setItem(key, this[key]);
-        } else {
-          localStorage.removeItem(key);
-        }
-      }
+      localStorage.setItem('accessToken', data.accessToken);
+      localStorage.setItem('refreshToken', data.refreshToken);
+      localStorage.setItem('username', data.username);
+      localStorage.setItem('role', data.role);
     },
 
     logout() {
@@ -72,7 +62,11 @@ export const useAuthStore = defineStore('auth', {
       this.username = null;
       this.role = null;
       this.profile = null;
-      this.saveToStorage();
+
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('username');
+      localStorage.removeItem('role');
     }
   }
 });

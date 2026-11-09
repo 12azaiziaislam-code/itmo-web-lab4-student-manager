@@ -109,6 +109,7 @@ body {
 }
 
 .error-msg {
+    display: block;
     color: #e53e3e;
     font-size: 11px;
     min-height: 14px;
@@ -298,13 +299,6 @@ tr.clickable:hover {
     gap: 10px;
 }
 
-.modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.4);
-    z-index: 999;
-}
-
 .modal {
     position: fixed;
     top: 50%;
@@ -330,11 +324,6 @@ tr.clickable:hover {
     display: flex;
     gap: 10px;
     margin-top: 15px;
-}
-
-.hint {
-    color: #718096;
-    font-size: 12px;
 }
 
 .text-center {

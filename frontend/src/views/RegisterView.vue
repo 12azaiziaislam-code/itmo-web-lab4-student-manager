@@ -8,19 +8,19 @@
         <div class="form-group">
           <label for="username">Username</label>
           <input id="username" v-model="form.username" type="text" placeholder="Enter username" autocomplete="username" />
-          <small class="error-msg">{{ errors.username }}</small>
+          <small v-if="errors.username" class="error-msg">{{ errors.username }}</small>
         </div>
 
         <div class="form-group">
           <label for="email">Email</label>
           <input id="email" v-model="form.email" type="email" placeholder="name@itmo.ru" autocomplete="email" />
-          <small class="error-msg">{{ errors.email }}</small>
+          <small v-if="errors.email" class="error-msg">{{ errors.email }}</small>
         </div>
 
         <div class="form-group">
           <label for="password">Password</label>
           <input id="password" v-model="form.password" type="password" placeholder="At least 6 characters" autocomplete="new-password" />
-          <small class="error-msg">{{ errors.password }}</small>
+          <small v-if="errors.password" class="error-msg">{{ errors.password }}</small>
         </div>
 
         <div class="form-group">

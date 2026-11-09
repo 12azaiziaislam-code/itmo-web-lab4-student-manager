@@ -2,8 +2,7 @@
   <div>
     <StudentFilters
       :initial="studentStore.filters"
-      @typing="changeFilters"
-      @apply="applyFilters"
+      @search="search"
       @reset="resetFilters"
     />
 
@@ -37,6 +36,9 @@
           <tr v-if="studentStore.loading && studentStore.students.length === 0">
             <td :colspan="columns.length + 1" class="text-center">Loading data...</td>
           </tr>
+          <tr v-else-if="studentStore.error && studentStore.students.length === 0">
+            <td :colspan="columns.length + 1" class="text-center" style="color: red">Failed to load data</td>
+          </tr>
           <tr v-else-if="studentStore.students.length === 0">
             <td :colspan="columns.length + 1" class="text-center">No students found</td>
           </tr>
@@ -55,10 +57,10 @@
             <td>{{ student.room }}</td>
             <td>{{ formatDate(student.accommodationPeriod) }}</td>
             <td class="actions-cell">
-              <button type="button" class="btn btn-secondary btn-sm" @click.stop="openDossier(student)">View</button>
+              <button type="button" class="btn btn-secondary" @click.stop="openDossier(student)">View</button>
               <template v-if="authStore.isAdmin">
-                <button type="button" class="btn btn-primary btn-sm" @click.stop="openEditModal(student)">Edit</button>
-                <button type="button" class="btn btn-danger btn-sm" @click.stop="promptDelete(student)">Delete</button>
+                <button type="button" class="btn btn-primary" @click.stop="openEditModal(student)">Edit</button>
+                <button type="button" class="btn btn-danger" @click.stop="promptDelete(student)">Delete</button>
               </template>
             </td>
           </tr>
@@ -121,7 +123,7 @@ import ConfirmModal from '../components/ConfirmModal.vue';
 
 const authStore = useAuthStore();
 const studentStore = useStudentStore();
-const { changeFilters, applyFilters, reload, sortBy, goToPage, setLimit, resetFilters } = useStudentList();
+const { search, reload, sortBy, goToPage, setLimit, resetFilters } = useStudentList();
 
 const columns = [
   { key: 'fullName', title: 'Full Name' },

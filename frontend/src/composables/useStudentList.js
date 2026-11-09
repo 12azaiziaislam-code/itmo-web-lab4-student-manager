@@ -1,81 +1,58 @@
 import { onMounted, onUnmounted } from 'vue';
-import {
-  Subject,
-  merge,
-  of,
-  timer,
-  debounce,
-  distinctUntilChanged,
-  map,
-  tap,
-  switchMap,
-  catchError
-} from 'rxjs';
+import { Subject, merge, EMPTY, debounceTime, tap, switchMap, catchError } from 'rxjs';
 import { useStudentStore } from '../stores/students';
 import studentService from '../services/studentService';
 import { fromRequest } from '../utils/rx';
 import { getErrorMessage } from '../utils/errors';
 
-const sameFilters = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-
 export function useStudentList() {
   const store = useStudentStore();
-  const filterInput$ = new Subject();
+  const search$ = new Subject();
   const reload$ = new Subject();
   let subscription = null;
 
-  const filterChanges$ = filterInput$.pipe(
-    debounce(({ immediate }) => timer(immediate ? 0 : 400)),
-    map(({ values }) => values),
-    distinctUntilChanged(sameFilters),
+  const filtersChanged$ = search$.pipe(
+    debounceTime(400),
     tap((values) => {
       store.filters = { ...store.filters, ...values, offset: 0 };
     })
   );
 
-  const result$ = merge(filterChanges$, reload$).pipe(
+  const students$ = merge(filtersChanged$, reload$).pipe(
     tap(() => {
       store.loading = true;
       store.error = null;
     }),
     switchMap(() =>
       fromRequest((signal) => studentService.getStudents(store.filters, signal)).pipe(
-        map((page) => ({ page })),
-        catchError((error) => of({ error }))
+        catchError((err) => {
+          store.loading = false;
+          store.error = getErrorMessage(err, 'Could not load students');
+          return EMPTY;
+        })
       )
     )
   );
 
   onMounted(() => {
-    subscription = result$.subscribe(({ page, error }) => {
+    subscription = students$.subscribe((page) => {
       store.loading = false;
-      if (error) {
-        store.error = getErrorMessage(error, 'Could not load students');
-        return;
-      }
       store.students = page.items;
       store.total = page.total;
 
       if (page.items.length === 0 && store.filters.offset > 0) {
-        store.filters.offset = Math.max(0, store.filters.offset - store.filters.limit);
-        reload$.next();
+        goToPage(store.currentPage - 1);
       }
     });
     reload$.next();
   });
 
   onUnmounted(() => {
-    subscription?.unsubscribe();
-    filterInput$.complete();
-    reload$.complete();
+    if (subscription) subscription.unsubscribe();
   });
 
-  function changeFilters(values) {
-    filterInput$.next({ values: { ...values }, immediate: false });
-  }
-
-  function applyFilters(values) {
-    filterInput$.next({ values: { ...values }, immediate: true });
+  function search(values) {
+    search$.next(values);
   }
 
   function reload() {
@@ -90,28 +67,27 @@ export function useStudentList() {
       store.filters.order = 'asc';
     }
     store.filters.offset = 0;
-    reload$.next();
+    reload();
   }
 
   function goToPage(page) {
-    if (page < 1 || page > store.totalPages) return;
+    if (page < 1) return;
     store.filters.offset = (page - 1) * store.filters.limit;
-    reload$.next();
+    reload();
   }
 
   function setLimit(limit) {
-    store.filters.limit = Number(limit);
+    store.filters.limit = limit;
     store.filters.offset = 0;
-    reload$.next();
+    reload();
   }
 
   function resetFilters(emptyValues) {
     store.resetFilters();
-    applyFilters(emptyValues);
-    reload$.next();
+    search(emptyValues);
   }
 
-  return { changeFilters, applyFilters, reload, sortBy, goToPage, setLimit, resetFilters };
+  return { search, reload, sortBy, goToPage, setLimit, resetFilters };
 }
 
 export default useStudentList;

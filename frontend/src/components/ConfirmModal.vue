@@ -1,6 +1,5 @@
 <template>
   <template v-if="isOpen">
-    <div class="modal-overlay" @click="!busy && $emit('cancel')"></div>
     <div class="modal">
       <h3>{{ title }}</h3>
       <p>{{ message }}</p>

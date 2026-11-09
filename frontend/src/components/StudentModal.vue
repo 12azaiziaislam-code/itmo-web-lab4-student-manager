@@ -1,6 +1,5 @@
 <template>
   <template v-if="isOpen">
-    <div class="modal-overlay" @click="handleClose"></div>
     <div class="modal">
       <h3>{{ isEditMode ? 'Edit Student' : 'Add Student' }}</h3>
       <div v-if="serverError" class="alert-error">{{ serverError }}</div>
@@ -9,37 +8,37 @@
         <div class="form-group">
           <label for="fullName">Full Name *</label>
           <input id="fullName" v-model="form.fullName" type="text" maxlength="50" />
-          <small class="error-msg">{{ errors.fullName }}</small>
+          <small v-if="errors.fullName" class="error-msg">{{ errors.fullName }}</small>
         </div>
 
         <div class="form-group">
           <label for="group">Group *</label>
-          <input id="group" v-model="form.group" type="text" maxlength="5" placeholder="P3278" />
-          <small class="error-msg">{{ errors.group }}</small>
+          <input id="group" v-model="form.group" type="text" maxlength="5" />
+          <small v-if="errors.group" class="error-msg">{{ errors.group }}</small>
         </div>
 
         <div class="form-group">
           <label for="isuId">ISU ID (6 digits) *</label>
-          <input id="isuId" v-model="form.isuId" type="text" maxlength="6" :disabled="isEditMode" />
-          <small class="error-msg">{{ errors.isuId }}</small>
+          <input id="isuId" v-model="form.isuId" type="text" maxlength="6" :readonly="isEditMode" />
+          <small v-if="errors.isuId" class="error-msg">{{ errors.isuId }}</small>
         </div>
 
         <div class="form-group">
           <label for="dormitoryNumber">Dormitory Number (1-99) *</label>
           <input id="dormitoryNumber" v-model.number="form.dormitoryNumber" type="number" min="1" max="99" />
-          <small class="error-msg">{{ errors.dormitoryNumber }}</small>
+          <small v-if="errors.dormitoryNumber" class="error-msg">{{ errors.dormitoryNumber }}</small>
         </div>
 
         <div class="form-group">
           <label for="room">Room Number (1-9999) *</label>
           <input id="room" v-model.number="form.room" type="number" min="1" max="9999" />
-          <small class="error-msg">{{ errors.room }}</small>
+          <small v-if="errors.room" class="error-msg">{{ errors.room }}</small>
         </div>
 
         <div class="form-group">
           <label for="accommodationPeriod">Accommodation Period *</label>
-          <input id="accommodationPeriod" v-model="form.accommodationPeriod" type="date" />
-          <small class="error-msg">{{ errors.accommodationPeriod }}</small>
+          <input id="accommodationPeriod" v-model="form.accommodationPeriod" type="date" min="2020-01-01" max="2035-12-31" />
+          <small v-if="errors.accommodationPeriod" class="error-msg">{{ errors.accommodationPeriod }}</small>
         </div>
 
         <div class="form-group checkbox-group">
@@ -52,8 +51,7 @@
         <div class="form-group">
           <label for="notes">Notes (Max 150 characters)</label>
           <textarea id="notes" v-model="form.notes" rows="3" maxlength="150"></textarea>
-          <small class="hint">{{ form.notes.length }} / 150</small>
-          <small class="error-msg">{{ errors.notes }}</small>
+          <small v-if="errors.notes" class="error-msg">{{ errors.notes }}</small>
         </div>
 
         <div class="modal-buttons">
@@ -99,7 +97,7 @@ function emptyForm() {
     group: '',
     dormitoryNumber: null,
     room: null,
-    accommodationPeriod: new Date().toISOString().slice(0, 10),
+    accommodationPeriod: '',
     isInternational: false,
     notes: ''
   };
@@ -142,8 +140,8 @@ function validate() {
 
   if (!f.fullName.trim()) {
     e.fullName = 'Full name is required';
-  } else if (f.fullName.trim().length > 50) {
-    e.fullName = 'Max 50 characters';
+  } else if (!/^[A-Za-zА-Яа-яЁё\s-]+$/.test(f.fullName.trim())) {
+    e.fullName = 'Only letters, spaces and hyphens';
   }
 
   if (!/^[A-Z]\d{4}$/.test(f.group.trim().toUpperCase())) {
@@ -164,6 +162,8 @@ function validate() {
 
   if (!f.accommodationPeriod) {
     e.accommodationPeriod = 'Accommodation date is required';
+  } else if (f.accommodationPeriod < '2020-01-01' || f.accommodationPeriod > '2035-12-31') {
+    e.accommodationPeriod = 'Date must be between 2020 and 2035';
   }
 
   if (f.notes && f.notes.length > 150) {

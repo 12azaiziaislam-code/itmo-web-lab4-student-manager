@@ -15,45 +15,41 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-function goToLogin() {
-  const current = router.currentRoute.value;
-  if (current.name !== 'login') {
-    router.push({ name: 'login', query: { redirect: current.fullPath, expired: '1' } });
+function sessionExpired() {
+  const auth = useAuthStore();
+  auth.logout();
+  if (router.currentRoute.value.name !== 'login') {
+    router.push({ name: 'login', query: { expired: '1' } });
   }
 }
 
-let refreshPromise = null;
+let refreshing = null;
 
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const original = error.config;
+    const request = error.config;
     const auth = useAuthStore();
-    const isAuthRequest = original?.url?.startsWith('/auth/');
 
-    if (error.response?.status !== 401 || isAuthRequest || !original) {
+    if (error.response?.status !== 401 || request.url.startsWith('/auth/')) {
       return Promise.reject(error);
     }
 
-    if (original._retry || !auth.refreshToken) {
-      auth.logout();
-      goToLogin();
+    if (request._retry || !auth.refreshToken) {
+      sessionExpired();
       return Promise.reject(error);
     }
 
-    original._retry = true;
+    request._retry = true;
     try {
-      if (!refreshPromise) {
-        refreshPromise = auth.refresh().finally(() => {
-          refreshPromise = null;
-        });
+      if (!refreshing) {
+        refreshing = auth.refresh().finally(() => (refreshing = null));
       }
-      await refreshPromise;
-      original.headers.Authorization = `Bearer ${auth.accessToken}`;
-      return api(original);
-    } catch (refreshError) {
-      auth.logout();
-      goToLogin();
+      await refreshing;
+      request.headers.Authorization = `Bearer ${auth.accessToken}`;
+      return api(request);
+    } catch (e) {
+      sessionExpired();
       return Promise.reject(error);
     }
   }
