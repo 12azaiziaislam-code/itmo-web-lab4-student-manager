@@ -8,11 +8,13 @@ import org.springframework.stereotype.Repository;
 import ru.itmo.studentmanager.model.Student;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.jooq.impl.DSL.and;
 import static org.jooq.impl.DSL.field;
 import static org.jooq.impl.DSL.table;
 
@@ -59,39 +61,102 @@ public class StudentJooqRepository implements StudentRepository {
         );
     }
 
-    @Override
-    public List<Student> findAll(Map<String, String> filters) {
-        List<Condition> conditions = new ArrayList<>();
-
-        if (filters != null) {
-            String name = filters.getOrDefault("fullName", filters.get("name"));
-            String group = filters.get("group");
-            String dormitory = filters.getOrDefault("dormitory", filters.get("dormitoryNumber"));
-            String room = filters.get("room");
-            String isuId = filters.getOrDefault("isuId", filters.get("isu"));
-
-            if (name != null && !name.trim().isEmpty()) {
-                conditions.add(field("full_name", String.class).containsIgnoreCase(name.trim()));
-            }
-            if (group != null && !group.trim().isEmpty()) {
-                conditions.add(field("student_group", String.class).containsIgnoreCase(group.trim()));
-            }
-            if (dormitory != null && !dormitory.trim().isEmpty()) {
-                try {
-                    int dormNum = Integer.parseInt(dormitory.trim());
-                    conditions.add(field("dormitory_number", Integer.class).eq(dormNum));
-                } catch (NumberFormatException ignored) {}
-            }
-            if (room != null && !room.trim().isEmpty()) {
-                try {
-                    int roomNum = Integer.parseInt(room.trim());
-                    conditions.add(field("room", Integer.class).eq(roomNum));
-                } catch (NumberFormatException ignored) {}
-            }
-            if (isuId != null && !isuId.trim().isEmpty()) {
-                conditions.add(field("isu_id", String.class).containsIgnoreCase(isuId.trim()));
+    private static String param(Map<String, String> filters, String... keys) {
+        for (String key : keys) {
+            String value = filters.get(key);
+            if (value != null && !value.isBlank()) {
+                return value.trim();
             }
         }
+        return null;
+    }
+
+    private static Integer parseInt(String value) {
+        if (value == null) return null;
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private static LocalDate parseDate(String value) {
+        if (value == null) return null;
+        try {
+            return LocalDate.parse(value);
+        } catch (DateTimeParseException e) {
+            return null;
+        }
+    }
+
+    private List<Condition> buildConditions(Map<String, String> filters) {
+        List<Condition> conditions = new ArrayList<>();
+        if (filters == null) {
+            return conditions;
+        }
+
+        String search = param(filters, "search", "q");
+        if (search != null) {
+            conditions.add(field("full_name", String.class).containsIgnoreCase(search)
+                    .or(field("isu_id", String.class).containsIgnoreCase(search))
+                    .or(field("student_group", String.class).containsIgnoreCase(search))
+                    .or(field("notes", String.class).containsIgnoreCase(search)));
+        }
+
+        String name = param(filters, "fullName", "name");
+        if (name != null) {
+            conditions.add(field("full_name", String.class).containsIgnoreCase(name));
+        }
+
+        String group = param(filters, "group");
+        if (group != null) {
+            conditions.add(field("student_group", String.class).containsIgnoreCase(group));
+        }
+
+        String isuId = param(filters, "isuId", "isu");
+        if (isuId != null) {
+            conditions.add(field("isu_id", String.class).containsIgnoreCase(isuId));
+        }
+
+        Integer dormitory = parseInt(param(filters, "dormitoryNumber", "dormitory"));
+        if (dormitory != null) {
+            conditions.add(field("dormitory_number", Integer.class).eq(dormitory));
+        }
+
+        Integer room = parseInt(param(filters, "room"));
+        if (room != null) {
+            conditions.add(field("room", Integer.class).eq(room));
+        }
+
+        LocalDate date = parseDate(param(filters, "accommodationPeriod"));
+        if (date != null) {
+            conditions.add(field("accommodation_period", LocalDate.class).eq(date));
+        }
+        LocalDate from = parseDate(param(filters, "accommodationFrom"));
+        if (from != null) {
+            conditions.add(field("accommodation_period", LocalDate.class).ge(from));
+        }
+        LocalDate to = parseDate(param(filters, "accommodationTo"));
+        if (to != null) {
+            conditions.add(field("accommodation_period", LocalDate.class).le(to));
+        }
+
+        String international = param(filters, "isInternational");
+        if ("true".equalsIgnoreCase(international) || "false".equalsIgnoreCase(international)) {
+            conditions.add(field("is_international", Boolean.class).eq(Boolean.parseBoolean(international)));
+        }
+
+        String notes = param(filters, "notes");
+        if (notes != null) {
+            conditions.add(field("notes", String.class).containsIgnoreCase(notes));
+        }
+
+        return conditions;
+    }
+
+    @Override
+    public List<Student> findAll(Map<String, String> filters) {
+        List<Condition> conditions = buildConditions(filters);
 
         String requestedSort = (filters != null && filters.get("sortBy") != null) ? filters.get("sortBy") : "isuId";
         String sortColumn = SORT_COLUMNS.getOrDefault(requestedSort, "isu_id");
@@ -103,10 +168,10 @@ public class StudentJooqRepository implements StudentRepository {
         int limit = 100;
         int offset = 0;
         if (filters != null) {
-            try {
-                if (filters.containsKey("limit")) limit = Integer.parseInt(filters.get("limit"));
-                if (filters.containsKey("offset")) offset = Integer.parseInt(filters.get("offset"));
-            } catch (NumberFormatException ignored) {}
+            Integer l = parseInt(filters.get("limit"));
+            Integer o = parseInt(filters.get("offset"));
+            if (l != null) limit = l;
+            if (o != null) offset = o;
         }
         limit = Math.max(1, Math.min(limit, 100));
         offset = Math.max(0, offset);
@@ -114,10 +179,15 @@ public class StudentJooqRepository implements StudentRepository {
         return dsl.select()
                 .from(table("students"))
                 .where(conditions)
-                .orderBy(sortField)
+                .orderBy(sortField, field("isu_id").asc())
                 .limit(limit)
                 .offset(offset)
                 .fetch(this::mapRecord);
+    }
+
+    @Override
+    public long count(Map<String, String> filters) {
+        return dsl.fetchCount(table("students"), and(buildConditions(filters)));
     }
 
     @Override

@@ -27,6 +27,10 @@ public class StudentService {
                 .toList();
     }
 
+    public long countStudents(Map<String, String> filters) {
+        return repo.count(filters);
+    }
+
     public StudentResponseDto getStudentByIsu(String isuId) {
         return repo.findByIsu(isuId)
                 .map(this::toResponseDto)

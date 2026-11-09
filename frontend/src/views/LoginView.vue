@@ -1,29 +1,31 @@
 <template>
-  <div class="auth-card">
-    <h2>Login</h2>
-    <form @submit.prevent="handleLogin">
-      <div class="field">
-        <label>Username</label>
-        <input v-model="form.username" type="text" placeholder="Enter username" />
-        <small class="error" v-if="errors.username">{{ errors.username }}</small>
-      </div>
+  <div class="auth-fullscreen">
+    <div class="auth-card">
+      <h2>Sign In</h2>
+      <div v-if="route.query.expired" class="alert-error">Session expired. Please sign in again.</div>
+      <div v-if="serverError" class="alert-error">{{ serverError }}</div>
 
-      <div class="field">
-        <label>Password</label>
-        <input v-model="form.password" type="password" placeholder="Enter password" />
-        <small class="error" v-if="errors.password">{{ errors.password }}</small>
-      </div>
+      <form @submit.prevent="handleLogin" novalidate>
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input id="username" v-model="form.username" type="text" placeholder="Enter username" autocomplete="username" />
+          <small class="error-msg">{{ errors.username }}</small>
+        </div>
 
-      <p class="server-error" v-if="serverError">{{ serverError }}</p>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input id="password" v-model="form.password" type="password" placeholder="At least 6 characters" autocomplete="current-password" />
+          <small class="error-msg">{{ errors.password }}</small>
+        </div>
 
-      <button type="submit" class="btn-primary" :disabled="isSubmitting">
-        {{ isSubmitting ? 'Logging in...' : 'Sign In' }}
-      </button>
-
-      <p class="footer-text">
-        Don't have an account? <RouterLink to="/register">Register here</RouterLink>
-      </p>
-    </form>
+        <div class="auth-actions">
+          <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
+            {{ isSubmitting ? 'Logging in...' : 'Login' }}
+          </button>
+          <RouterLink to="/register" class="btn btn-link text-center">Need an account? Register</RouterLink>
+        </div>
+      </form>
+    </div>
   </div>
 </template>
 
@@ -31,6 +33,8 @@
 import { ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
+import { useSubmit } from '../composables/useSubmit';
+import { getErrorMessage } from '../utils/errors';
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -39,7 +43,6 @@ const route = useRoute();
 const form = ref({ username: '', password: '' });
 const errors = ref({});
 const serverError = ref('');
-const isSubmitting = ref(false);
 
 function validate() {
   errors.value = {};
@@ -48,53 +51,18 @@ function validate() {
   return Object.keys(errors.value).length === 0;
 }
 
-async function handleLogin() {
-  if (isSubmitting.value || !validate()) return;
-
-  isSubmitting.value = true;
+const { isSubmitting, submit } = useSubmit(async () => {
   serverError.value = '';
-
   try {
-    await auth.login(form.value);
-    const redirectPath = route.query.redirect || '/';
-    router.push(redirectPath);
+    await auth.login({ username: form.value.username.trim(), password: form.value.password });
+    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/';
+    router.push(redirect.startsWith('/') ? redirect : '/');
   } catch (err) {
-    serverError.value = err.response?.data?.message || 'Invalid credentials or server error';
-  } finally {
-    isSubmitting.value = false;
+    serverError.value = getErrorMessage(err, 'Invalid credentials');
   }
+});
+
+function handleLogin() {
+  if (validate()) submit();
 }
 </script>
-
-<style scoped>
-.auth-card {
-  max-width: 400px;
-  margin: 60px auto;
-  padding: 32px;
-  background-color: var(--surface-color);
-  border-radius: 8px;
-  border: 1px solid var(--border);
-}
-h2 { margin-bottom: 24px; text-align: center; }
-.field { margin-bottom: 16px; }
-label { display: block; margin-bottom: 6px; color: var(--text-muted); font-size: 0.9rem; }
-input {
-  width: 100%;
-  padding: 10px 12px;
-  background-color: var(--bg-color);
-  border: 1px solid var(--border);
-  color: var(--text-main);
-  border-radius: 6px;
-}
-.btn-primary {
-  width: 100%;
-  background-color: var(--primary);
-  color: white;
-  padding: 10px;
-  margin-top: 8px;
-}
-.error { color: var(--danger); font-size: 0.8rem; margin-top: 4px; display: block; }
-.server-error { color: var(--danger); margin-bottom: 12px; text-align: center; }
-.footer-text { margin-top: 16px; text-align: center; font-size: 0.9rem; color: var(--text-muted); }
-</style>
-

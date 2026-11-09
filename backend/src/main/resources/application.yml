@@ -15,5 +15,5 @@ spring:
 
 jwt:
   secret: ${JWT_SECRET:mySuperSecretKeyForJwtSigningMustBeAtLeast32BytesLong12345}
-  access-expiration-ms: 900000
-  refresh-expiration-ms: 604800000
+  access-expiration-ms: ${JWT_ACCESS_EXPIRATION_MS:900000}
+  refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:604800000}

@@ -1,43 +1,44 @@
 <template>
-  <div class="auth-card">
-    <h2>Create Account</h2>
-    <form @submit.prevent="handleRegister">
-      <div class="field">
-        <label>Username</label>
-        <input v-model="form.username" type="text" placeholder="Username" />
-        <small class="error" v-if="errors.username">{{ errors.username }}</small>
-      </div>
+  <div class="auth-fullscreen">
+    <div class="auth-card">
+      <h2>Create Account</h2>
+      <div v-if="serverError" class="alert-error">{{ serverError }}</div>
 
-      <div class="field">
-        <label>Email</label>
-        <input v-model="form.email" type="email" placeholder="Email" />
-        <small class="error" v-if="errors.email">{{ errors.email }}</small>
-      </div>
+      <form @submit.prevent="handleRegister" novalidate>
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input id="username" v-model="form.username" type="text" placeholder="Enter username" autocomplete="username" />
+          <small class="error-msg">{{ errors.username }}</small>
+        </div>
 
-      <div class="field">
-        <label>Password</label>
-        <input v-model="form.password" type="password" placeholder="Password (min 6 chars)" />
-        <small class="error" v-if="errors.password">{{ errors.password }}</small>
-      </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input id="email" v-model="form.email" type="email" placeholder="name@itmo.ru" autocomplete="email" />
+          <small class="error-msg">{{ errors.email }}</small>
+        </div>
 
-      <div class="field">
-        <label>Role</label>
-        <select v-model="form.role">
-          <option value="USER">USER</option>
-          <option value="ADMIN">ADMIN</option>
-        </select>
-      </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input id="password" v-model="form.password" type="password" placeholder="At least 6 characters" autocomplete="new-password" />
+          <small class="error-msg">{{ errors.password }}</small>
+        </div>
 
-      <p class="server-error" v-if="serverError">{{ serverError }}</p>
+        <div class="form-group">
+          <label for="role">Role</label>
+          <select id="role" v-model="form.role">
+            <option value="USER">USER (Read-only)</option>
+            <option value="ADMIN">ADMIN (Full Access)</option>
+          </select>
+        </div>
 
-      <button type="submit" class="btn-primary" :disabled="isSubmitting">
-        {{ isSubmitting ? 'Registering...' : 'Register' }}
-      </button>
-
-      <p class="footer-text">
-        Already registered? <RouterLink to="/login">Login here</RouterLink>
-      </p>
-    </form>
+        <div class="auth-actions">
+          <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
+            {{ isSubmitting ? 'Registering...' : 'Register' }}
+          </button>
+          <RouterLink to="/login" class="btn btn-link text-center">Already have an account? Sign In</RouterLink>
+        </div>
+      </form>
+    </div>
   </div>
 </template>
 
@@ -45,6 +46,8 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
+import { useSubmit } from '../composables/useSubmit';
+import { getErrorMessage } from '../utils/errors';
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -52,68 +55,38 @@ const router = useRouter();
 const form = ref({ username: '', email: '', password: '', role: 'USER' });
 const errors = ref({});
 const serverError = ref('');
-const isSubmitting = ref(false);
 
 function validate() {
   errors.value = {};
-  if (!form.value.username.trim() || form.value.username.trim().length < 3) {
-    errors.value.username = 'Username must be at least 3 characters';
+  const username = form.value.username.trim();
+  if (username.length < 3 || username.length > 50) {
+    errors.value.username = 'Username must be from 3 to 50 characters';
   }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email)) errors.value.email = 'Valid email is required';
-  if (form.value.password.length < 6) errors.value.password = 'Password must be at least 6 characters';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email.trim())) {
+    errors.value.email = 'Enter a valid email';
+  }
+  if (form.value.password.length < 6) {
+    errors.value.password = 'Password must be at least 6 characters';
+  }
   return Object.keys(errors.value).length === 0;
 }
 
-async function handleRegister() {
-  if (isSubmitting.value || !validate()) return;
-
-  isSubmitting.value = true;
+const { isSubmitting, submit } = useSubmit(async () => {
   serverError.value = '';
-
   try {
-    await auth.register(form.value);
+    await auth.register({
+      username: form.value.username.trim(),
+      email: form.value.email.trim(),
+      password: form.value.password,
+      role: form.value.role
+    });
     router.push('/');
   } catch (err) {
-    serverError.value = err.response?.data?.message || 'Registration failed';
-  } finally {
-    isSubmitting.value = false;
+    serverError.value = getErrorMessage(err, 'Registration failed');
   }
+});
+
+function handleRegister() {
+  if (validate()) submit();
 }
 </script>
-
-<style scoped>
-.auth-card {
-  max-width: 400px;
-  margin: 40px auto;
-  padding: 32px;
-  background-color: var(--surface-color);
-  border-radius: 8px;
-  border: 1px solid var(--border);
-}
-h2 { margin-bottom: 24px; text-align: center; }
-.field { margin-bottom: 16px; }
-label { display: block; margin-bottom: 6px; color: var(--text-muted); font-size: 0.9rem; }
-input, select {
-  width: 100%;
-  padding: 10px 12px;
-  background-color: var(--bg-color);
-  border: 1px solid var(--border);
-  color: var(--text-main);
-  border-radius: 6px;
-}
-option {
-  background-color: var(--surface-color);
-  color: var(--text-main);
-}
-.btn-primary {
-  width: 100%;
-  background-color: var(--primary);
-  color: white;
-  padding: 10px;
-  margin-top: 8px;
-}
-.error { color: var(--danger); font-size: 0.8rem; margin-top: 4px; display: block; }
-.server-error { color: var(--danger); margin-bottom: 12px; text-align: center; }
-.footer-text { margin-top: 16px; text-align: center; font-size: 0.9rem; color: var(--text-muted); }
-</style>
-

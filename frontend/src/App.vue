@@ -1,26 +1,28 @@
 <template>
-  <div class="layout">
-    <header class="navbar" v-if="auth.isAuthenticated">
-      <div class="brand">ITMO Student Manager</div>
-      <nav class="links">
-        <RouterLink to="/">Students</RouterLink>
-        <RouterLink to="/profile">Profile</RouterLink>
-      </nav>
-      <div class="user-meta">
-        <span>{{ auth.username }} (<strong>{{ auth.role }}</strong>)</span>
-        <button class="btn-logout" @click="handleLogout">Logout</button>
+  <div v-if="auth.isAuthenticated" class="container">
+    <header class="app-header">
+      <div>
+        <h1>Student Management System</h1>
+        <div class="user-badge">
+          Logged in as: <strong>{{ auth.username }}</strong> ({{ auth.role }})
+        </div>
+        <nav class="nav-links">
+          <RouterLink to="/">Students</RouterLink>
+          <RouterLink to="/profile">Profile</RouterLink>
+        </nav>
       </div>
+      <button type="button" class="btn btn-danger" @click="handleLogout">Logout</button>
     </header>
 
-    <main class="main-content">
-      <RouterView />
-    </main>
+    <RouterView />
   </div>
+
+  <RouterView v-else />
 </template>
 
 <script setup>
-import { useAuthStore } from './stores/auth';
 import { useRouter } from 'vue-router';
+import { useAuthStore } from './stores/auth';
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -30,41 +32,3 @@ function handleLogout() {
   router.push({ name: 'login' });
 }
 </script>
-
-<style scoped>
-.navbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 24px;
-  background-color: var(--surface-color);
-  border-bottom: 1px solid var(--border);
-}
-.brand {
-  font-weight: 700;
-  font-size: 1.1rem;
-}
-.links a {
-  margin-right: 16px;
-  color: var(--text-muted);
-}
-.links a.router-link-active {
-  color: var(--primary);
-  font-weight: 600;
-}
-.user-meta {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.btn-logout {
-  background-color: var(--border);
-  color: var(--text-main);
-}
-.main-content {
-  padding: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-</style>
-

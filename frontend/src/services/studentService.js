@@ -1,24 +1,27 @@
 import api from './api';
 
-export const studentService = {
-  async getStudents(params = {}) {
-    const cleanParams = {};
-    for (const [key, value] of Object.entries(params)) {
-      if (value !== '' && value !== null && value !== undefined) {
-        cleanParams[key] = value;
-      }
+function cleanParams(params) {
+  const result = {};
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== '' && value !== null && value !== undefined) {
+      result[key] = value;
     }
-    const response = await api.get('/students', { params: cleanParams });
-    return response.data;
+  }
+  return result;
+}
+
+export const studentService = {
+  async getStudents(params = {}, signal) {
+    const response = await api.get('/students', { params: cleanParams(params), signal });
+    const total = Number(response.headers['x-total-count']);
+    return {
+      items: response.data,
+      total: Number.isNaN(total) ? response.data.length : total
+    };
   },
 
-  async searchStudents(filters = {}) {
-    const response = await api.post('/students/search', filters);
-    return response.data;
-  },
-
-  async getStudentByIsu(isuId) {
-    const response = await api.get(`/students/${isuId}`);
+  async getStudentByIsu(isuId, signal) {
+    const response = await api.get(`/students/${isuId}`, { signal });
     return response.data;
   },
 
@@ -28,13 +31,12 @@ export const studentService = {
   },
 
   async updateStudent(isuId, studentData) {
-    const response = await api.patch(`/students/${isuId}`, studentData);
+    const response = await api.put(`/students/${isuId}`, studentData);
     return response.data;
   },
 
   async deleteStudent(isuId) {
-    const response = await api.delete(`/students/${isuId}`);
-    return response.data;
+    await api.delete(`/students/${isuId}`);
   }
 };
 

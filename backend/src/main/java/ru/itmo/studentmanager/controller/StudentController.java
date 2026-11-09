@@ -25,17 +25,23 @@ public class StudentController {
     }
 
     @GetMapping
-    public List<StudentResponseDto> getStudents(@RequestParam Map<String, String> params) {
-        return service.getFilteredStudents(params);
+    public ResponseEntity<List<StudentResponseDto>> getStudents(@RequestParam Map<String, String> params) {
+        return listWithTotal(params);
     }
 
     @PostMapping("/search")
-    public List<StudentResponseDto> queryStudents(@RequestBody(required = false) Map<String, Object> filters) {
+    public ResponseEntity<List<StudentResponseDto>> queryStudents(@RequestBody(required = false) Map<String, Object> filters) {
         Map<String, String> stringFilters = new HashMap<>();
         if (filters != null) {
             filters.forEach((k, v) -> stringFilters.put(k, v != null ? v.toString() : null));
         }
-        return service.getFilteredStudents(stringFilters);
+        return listWithTotal(stringFilters);
+    }
+
+    private ResponseEntity<List<StudentResponseDto>> listWithTotal(Map<String, String> filters) {
+        return ResponseEntity.ok()
+                .header("X-Total-Count", String.valueOf(service.countStudents(filters)))
+                .body(service.getFilteredStudents(filters));
     }
 
     @GetMapping("/{isuId}")

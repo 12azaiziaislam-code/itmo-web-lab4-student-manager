@@ -1,134 +1,77 @@
 <template>
-  <div class="modal-backdrop" v-if="isOpen" @click.self="handleClose">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3>{{ isEditMode ? 'Edit Student' : 'Add New Student' }}</h3>
-        <button class="btn-close" @click="handleClose">&times;</button>
-      </div>
+  <template v-if="isOpen">
+    <div class="modal-overlay" @click="handleClose"></div>
+    <div class="modal">
+      <h3>{{ isEditMode ? 'Edit Student' : 'Add Student' }}</h3>
+      <div v-if="serverError" class="alert-error">{{ serverError }}</div>
 
-      <form @submit.prevent="handleSubmit" class="modal-form">
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="isuId">ISU ID <span class="required">*</span></label>
-            <input
-              id="isuId"
-              v-model="form.isuId"
-              type="text"
-              maxlength="6"
-              placeholder="e.g. 470449"
-              :disabled="isEditMode"
-              :class="{ 'has-error': errors.isuId }"
-            />
-            <small class="error-msg" v-if="errors.isuId">{{ errors.isuId }}</small>
-            <small class="hint-msg" v-else-if="!isEditMode">Exactly 6 digits</small>
-          </div>
-
-          <div class="form-group">
-            <label for="fullName">Full Name <span class="required">*</span></label>
-            <input
-              id="fullName"
-              v-model="form.fullName"
-              type="text"
-              maxlength="50"
-              placeholder="Student Full Name"
-              :class="{ 'has-error': errors.fullName }"
-            />
-            <small class="error-msg" v-if="errors.fullName">{{ errors.fullName }}</small>
-          </div>
-
-          <div class="form-group">
-            <label for="group">Group <span class="required">*</span></label>
-            <input
-              id="group"
-              v-model="form.group"
-              type="text"
-              maxlength="5"
-              placeholder="e.g. P3278"
-              :class="{ 'has-error': errors.group }"
-            />
-            <small class="error-msg" v-if="errors.group">{{ errors.group }}</small>
-            <small class="hint-msg" v-else>Format: Letter + 4 digits (e.g. P3278)</small>
-          </div>
-
-          <div class="form-group">
-            <label for="dormitoryNumber">Dormitory # <span class="required">*</span></label>
-            <input
-              id="dormitoryNumber"
-              v-model.number="form.dormitoryNumber"
-              type="number"
-              min="1"
-              max="99"
-              placeholder="1 - 99"
-              :class="{ 'has-error': errors.dormitoryNumber }"
-            />
-            <small class="error-msg" v-if="errors.dormitoryNumber">{{ errors.dormitoryNumber }}</small>
-          </div>
-
-          <div class="form-group">
-            <label for="room">Room <span class="required">*</span></label>
-            <input
-              id="room"
-              v-model.number="form.room"
-              type="number"
-              min="1"
-              max="9999"
-              placeholder="1 - 9999"
-              :class="{ 'has-error': errors.room }"
-            />
-            <small class="error-msg" v-if="errors.room">{{ errors.room }}</small>
-          </div>
-
-          <div class="form-group">
-            <label for="accommodationPeriod">Accommodation Date <span class="required">*</span></label>
-            <input
-              id="accommodationPeriod"
-              v-model="form.accommodationPeriod"
-              type="date"
-              :class="{ 'has-error': errors.accommodationPeriod }"
-            />
-            <small class="error-msg" v-if="errors.accommodationPeriod">{{ errors.accommodationPeriod }}</small>
-          </div>
+      <form @submit.prevent="handleSubmit" novalidate>
+        <div class="form-group">
+          <label for="fullName">Full Name *</label>
+          <input id="fullName" v-model="form.fullName" type="text" maxlength="50" />
+          <small class="error-msg">{{ errors.fullName }}</small>
         </div>
 
-        <div class="form-checkbox">
-          <label>
-            <input v-model="form.isInternational" type="checkbox" />
+        <div class="form-group">
+          <label for="group">Group *</label>
+          <input id="group" v-model="form.group" type="text" maxlength="5" placeholder="P3278" />
+          <small class="error-msg">{{ errors.group }}</small>
+        </div>
+
+        <div class="form-group">
+          <label for="isuId">ISU ID (6 digits) *</label>
+          <input id="isuId" v-model="form.isuId" type="text" maxlength="6" :disabled="isEditMode" />
+          <small class="error-msg">{{ errors.isuId }}</small>
+        </div>
+
+        <div class="form-group">
+          <label for="dormitoryNumber">Dormitory Number (1-99) *</label>
+          <input id="dormitoryNumber" v-model.number="form.dormitoryNumber" type="number" min="1" max="99" />
+          <small class="error-msg">{{ errors.dormitoryNumber }}</small>
+        </div>
+
+        <div class="form-group">
+          <label for="room">Room Number (1-9999) *</label>
+          <input id="room" v-model.number="form.room" type="number" min="1" max="9999" />
+          <small class="error-msg">{{ errors.room }}</small>
+        </div>
+
+        <div class="form-group">
+          <label for="accommodationPeriod">Accommodation Period *</label>
+          <input id="accommodationPeriod" v-model="form.accommodationPeriod" type="date" />
+          <small class="error-msg">{{ errors.accommodationPeriod }}</small>
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label for="isInternational">
+            <input id="isInternational" v-model="form.isInternational" type="checkbox" />
             <span>International Student</span>
           </label>
         </div>
 
         <div class="form-group">
-          <label for="notes">Notes (optional)</label>
-          <textarea
-            id="notes"
-            v-model="form.notes"
-            maxlength="150"
-            rows="3"
-            placeholder="Additional information or requests (max 150 chars)"
-            :class="{ 'has-error': errors.notes }"
-          ></textarea>
-          <div class="char-count">{{ form.notes?.length || 0 }} / 150</div>
-          <small class="error-msg" v-if="errors.notes">{{ errors.notes }}</small>
+          <label for="notes">Notes (Max 150 characters)</label>
+          <textarea id="notes" v-model="form.notes" rows="3" maxlength="150"></textarea>
+          <small class="hint">{{ form.notes.length }} / 150</small>
+          <small class="error-msg">{{ errors.notes }}</small>
         </div>
 
-        <p class="server-error" v-if="serverError">{{ serverError }}</p>
-
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" @click="handleClose" :disabled="isSubmitting">
-            Cancel
+        <div class="modal-buttons">
+          <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
+            {{ isSubmitting ? 'Saving...' : 'Save' }}
           </button>
-          <button type="submit" class="btn-primary" :disabled="isSubmitting">
-            {{ isSubmitting ? 'Saving...' : (isEditMode ? 'Update Student' : 'Create Student') }}
-          </button>
+          <button type="button" class="btn btn-secondary" :disabled="isSubmitting" @click="handleClose">Cancel</button>
         </div>
       </form>
     </div>
-  </div>
+  </template>
 </template>
 
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { useStudentStore } from '../stores/students';
+import { useSubmit } from '../composables/useSubmit';
+import { getErrorMessage } from '../utils/errors';
 
 const props = defineProps({
   isOpen: {
@@ -145,114 +88,104 @@ const emit = defineEmits(['close', 'saved']);
 const studentStore = useStudentStore();
 
 const isEditMode = computed(() => !!props.student);
-const isSubmitting = ref(false);
 const serverError = ref('');
 const errors = ref({});
+const form = ref(emptyForm());
 
-const form = ref({
-  isuId: '',
-  fullName: '',
-  group: '',
-  dormitoryNumber: null,
-  room: null,
-  accommodationPeriod: '',
-  isInternational: false,
-  notes: ''
-});
-
-watch(
-  () => props.student,
-  (newVal) => {
-    if (newVal) {
-      form.value = {
-        isuId: newVal.isuId || '',
-        fullName: newVal.fullName || '',
-        group: newVal.group || '',
-        dormitoryNumber: newVal.dormitoryNumber ?? null,
-        room: newVal.room ?? null,
-        accommodationPeriod: newVal.accommodationPeriod || '',
-        isInternational: Boolean(newVal.isInternational),
-        notes: newVal.notes || ''
-      };
-    } else {
-      resetForm();
-    }
-  },
-  { immediate: true }
-);
-
-function resetForm() {
-  form.value = {
+function emptyForm() {
+  return {
     isuId: '',
     fullName: '',
     group: '',
     dormitoryNumber: null,
     room: null,
-    accommodationPeriod: new Date().toISOString().split('T')[0],
+    accommodationPeriod: new Date().toISOString().slice(0, 10),
     isInternational: false,
     notes: ''
   };
-  errors.value = {};
-  serverError.value = '';
+}
+
+watch(
+  () => props.isOpen,
+  (open) => {
+    if (!open) return;
+    errors.value = {};
+    serverError.value = '';
+    const s = props.student;
+    form.value = s
+      ? {
+          isuId: s.isuId || '',
+          fullName: s.fullName || '',
+          group: s.group || '',
+          dormitoryNumber: s.dormitoryNumber ?? null,
+          room: s.room ?? null,
+          accommodationPeriod: s.accommodationPeriod || '',
+          isInternational: Boolean(s.isInternational),
+          notes: s.notes || ''
+        }
+      : emptyForm();
+  },
+  { immediate: true }
+);
+
+function isEmpty(value) {
+  return value === null || value === '' || value === undefined || Number.isNaN(value);
 }
 
 function validate() {
-  errors.value = {};
+  const f = form.value;
+  const e = {};
 
-  if (!isEditMode.value) {
-    if (!form.value.isuId || !/^\d{6}$/.test(form.value.isuId.trim())) {
-      errors.value.isuId = 'ISU ID must be exactly 6 digits';
-    }
+  if (!isEditMode.value && !/^\d{6}$/.test(f.isuId.trim())) {
+    e.isuId = 'ISU ID must be exactly 6 digits';
   }
 
-  if (!form.value.fullName || !form.value.fullName.trim()) {
-    errors.value.fullName = 'Full Name is required';
-  } else if (form.value.fullName.trim().length > 50) {
-    errors.value.fullName = 'Max 50 characters allowed';
+  if (!f.fullName.trim()) {
+    e.fullName = 'Full name is required';
+  } else if (f.fullName.trim().length > 50) {
+    e.fullName = 'Max 50 characters';
   }
 
-  if (!form.value.group || !/^[A-Z]\d{4}$/.test(form.value.group.trim().toUpperCase())) {
-    errors.value.group = 'Group must match format like P3278';
+  if (!/^[A-Z]\d{4}$/.test(f.group.trim().toUpperCase())) {
+    e.group = 'Group must look like P3278';
   }
 
-  if (form.value.dormitoryNumber === null || form.value.dormitoryNumber === '' || isNaN(form.value.dormitoryNumber)) {
-    errors.value.dormitoryNumber = 'Dormitory number is required';
-  } else if (form.value.dormitoryNumber < 1 || form.value.dormitoryNumber > 99) {
-    errors.value.dormitoryNumber = 'Dormitory must be between 1 and 99';
+  if (isEmpty(f.dormitoryNumber)) {
+    e.dormitoryNumber = 'Dormitory number is required';
+  } else if (!Number.isInteger(f.dormitoryNumber) || f.dormitoryNumber < 1 || f.dormitoryNumber > 99) {
+    e.dormitoryNumber = 'Dormitory must be a whole number from 1 to 99';
   }
 
-  if (form.value.room === null || form.value.room === '' || isNaN(form.value.room)) {
-    errors.value.room = 'Room number is required';
-  } else if (form.value.room < 1 || form.value.room > 9999) {
-    errors.value.room = 'Room must be between 1 and 9999';
+  if (isEmpty(f.room)) {
+    e.room = 'Room number is required';
+  } else if (!Number.isInteger(f.room) || f.room < 1 || f.room > 9999) {
+    e.room = 'Room must be a whole number from 1 to 9999';
   }
 
-  if (!form.value.accommodationPeriod) {
-    errors.value.accommodationPeriod = 'Accommodation period date is required';
+  if (!f.accommodationPeriod) {
+    e.accommodationPeriod = 'Accommodation date is required';
   }
 
-  if (form.value.notes && form.value.notes.length > 150) {
-    errors.value.notes = 'Notes cannot exceed 150 characters';
+  if (f.notes && f.notes.length > 150) {
+    e.notes = 'Notes can be max 150 characters';
   }
 
-  return Object.keys(errors.value).length === 0;
+  errors.value = e;
+  return Object.keys(e).length === 0;
 }
 
-async function handleSubmit() {
-  if (isSubmitting.value || !validate()) return;
-
-  isSubmitting.value = true;
+const { isSubmitting, submit } = useSubmit(async () => {
   serverError.value = '';
-
+  const f = form.value;
   const payload = {
-    isuId: form.value.isuId.trim(),
-    fullName: form.value.fullName.trim(),
-    group: form.value.group.trim().toUpperCase(),
-    dormitoryNumber: Number(form.value.dormitoryNumber),
-    room: Number(form.value.room),
-    accommodationPeriod: form.value.accommodationPeriod,
-    isInternational: Boolean(form.value.isInternational),
-    notes: form.value.notes ? form.value.notes.trim() : null
+    isuId: f.isuId.trim(),
+    fullName: f.fullName.trim(),
+    group: f.group.trim().toUpperCase(),
+    dormitoryNumber: f.dormitoryNumber,
+    room: f.room,
+    accommodationPeriod: f.accommodationPeriod,
+    isInternational: f.isInternational,
+    notes: f.notes.trim() || null
   };
 
   try {
@@ -262,170 +195,16 @@ async function handleSubmit() {
       await studentStore.createStudent(payload);
     }
     emit('saved');
-    handleClose();
   } catch (err) {
-    serverError.value = err.response?.data?.message || 'Error occurred while saving student';
-  } finally {
-    isSubmitting.value = false;
+    serverError.value = getErrorMessage(err, 'Could not save student');
   }
+});
+
+function handleSubmit() {
+  if (validate()) submit();
 }
 
 function handleClose() {
-  resetForm();
-  emit('close');
+  if (!isSubmitting.value) emit('close');
 }
 </script>
-
-<style scoped>
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 16px;
-}
-.modal-card {
-  background-color: var(--surface-color);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  width: 100%;
-  max-width: 580px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-  animation: fadeIn 0.2s ease;
-}
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.96); }
-  to { opacity: 1; transform: scale(1); }
-}
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 18px 24px;
-  border-bottom: 1px solid var(--border);
-}
-.modal-header h3 {
-  font-size: 1.2rem;
-  color: var(--text-main);
-}
-.btn-close {
-  background: transparent;
-  font-size: 1.5rem;
-  color: var(--text-muted);
-  padding: 0 6px;
-  line-height: 1;
-}
-.btn-close:hover {
-  color: var(--text-main);
-}
-.modal-form {
-  padding: 24px;
-}
-.form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-@media (max-width: 560px) {
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
-}
-.form-group {
-  margin-bottom: 14px;
-}
-label {
-  display: block;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  margin-bottom: 6px;
-}
-.required {
-  color: var(--danger);
-}
-input, textarea {
-  width: 100%;
-  padding: 9px 12px;
-  background-color: var(--bg-color);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text-main);
-  font-size: 0.95rem;
-  outline: none;
-  transition: border-color 0.2s;
-}
-input:focus, textarea:focus {
-  border-color: var(--primary);
-}
-input:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  background-color: rgba(255, 255, 255, 0.05);
-}
-input.has-error, textarea.has-error {
-  border-color: var(--danger);
-}
-.error-msg {
-  color: var(--danger);
-  font-size: 0.8rem;
-  margin-top: 4px;
-  display: block;
-}
-.hint-msg {
-  color: var(--text-muted);
-  font-size: 0.75rem;
-  margin-top: 3px;
-  display: block;
-}
-.form-checkbox {
-  margin: 8px 0 16px;
-}
-.form-checkbox label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--text-main);
-  cursor: pointer;
-}
-.form-checkbox input {
-  width: auto;
-}
-.char-count {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  text-align: right;
-  margin-top: 2px;
-}
-.server-error {
-  color: var(--danger);
-  margin-bottom: 12px;
-  text-align: center;
-  font-size: 0.9rem;
-}
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 20px;
-}
-.btn-primary {
-  background-color: var(--primary);
-  color: white;
-}
-.btn-primary:hover {
-  background-color: var(--primary-hover);
-}
-.btn-secondary {
-  background-color: transparent;
-  border: 1px solid var(--border);
-  color: var(--text-main);
-}
-.btn-secondary:hover {
-  background-color: var(--border);
-}
-</style>
-

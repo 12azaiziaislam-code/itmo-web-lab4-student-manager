@@ -35,4 +35,10 @@ public class AuthController {
     public AuthResponseDto refresh(@Valid @RequestBody RefreshTokenRequestDto dto) {
         return authService.refresh(dto);
     }
+
+    @PostMapping("/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void logout(@Valid @RequestBody RefreshTokenRequestDto dto) {
+        authService.logout(dto);
+    }
 }

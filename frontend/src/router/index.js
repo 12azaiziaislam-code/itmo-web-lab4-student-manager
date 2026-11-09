@@ -6,25 +6,25 @@ const routes = [
     path: '/',
     name: 'students',
     component: () => import('../views/StudentsView.vue'),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, title: 'Student Management System' }
   },
   {
     path: '/login',
     name: 'login',
     component: () => import('../views/LoginView.vue'),
-    meta: { guestOnly: true }
+    meta: { guestOnly: true, title: 'Sign In - Student Management System' }
   },
   {
     path: '/register',
     name: 'register',
     component: () => import('../views/RegisterView.vue'),
-    meta: { guestOnly: true }
+    meta: { guestOnly: true, title: 'Create Account - Student Management System' }
   },
   {
     path: '/profile',
     name: 'profile',
     component: () => import('../views/ProfileView.vue'),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, title: 'Profile - Student Management System' }
   },
   {
     path: '/:pathMatch(.*)*',
@@ -49,5 +49,8 @@ router.beforeEach((to) => {
   }
 });
 
-export default router;
+router.afterEach((to) => {
+  document.title = to.meta.title || 'Student Management System';
+});
 
+export default router;

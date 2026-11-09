@@ -9,8 +9,10 @@ import ru.itmo.studentmanager.dto.AuthResponseDto;
 import ru.itmo.studentmanager.dto.LoginRequestDto;
 import ru.itmo.studentmanager.dto.RefreshTokenRequestDto;
 import ru.itmo.studentmanager.dto.RegisterRequestDto;
+import ru.itmo.studentmanager.dto.UserInfoDto;
 import ru.itmo.studentmanager.exception.DuplicateResourceException;
 import ru.itmo.studentmanager.exception.InvalidCredentialsException;
+import ru.itmo.studentmanager.exception.ResourceNotFoundException;
 import ru.itmo.studentmanager.model.User;
 import ru.itmo.studentmanager.repository.RefreshTokenRepository;
 import ru.itmo.studentmanager.repository.UserJooqRepository;
@@ -93,6 +95,17 @@ public class AuthService {
 
         log.info("Refreshed token for user: {}", user.username());
         return issueTokens(user);
+    }
+
+    @Transactional
+    public void logout(RefreshTokenRequestDto dto) {
+        refreshTokenRepository.deleteByToken(dto.refreshToken());
+    }
+
+    public UserInfoDto getCurrentUser(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        return new UserInfoDto(user.id(), user.username(), user.email(), user.role());
     }
 
     private AuthResponseDto issueTokens(User user) {

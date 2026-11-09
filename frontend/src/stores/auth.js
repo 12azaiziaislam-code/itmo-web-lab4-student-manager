@@ -2,12 +2,15 @@ import { defineStore } from 'pinia';
 import axios from 'axios';
 import api from '../services/api';
 
+const STORAGE_KEYS = ['accessToken', 'refreshToken', 'username', 'role'];
+
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     accessToken: localStorage.getItem('accessToken'),
     refreshToken: localStorage.getItem('refreshToken'),
     username: localStorage.getItem('username'),
-    role: localStorage.getItem('role')
+    role: localStorage.getItem('role'),
+    profile: null
   }),
 
   getters: {
@@ -33,25 +36,43 @@ export const useAuthStore = defineStore('auth', {
       this.setSession(data);
     },
 
+    async fetchProfile(signal) {
+      const { data } = await api.get('/users/me', { signal });
+      this.profile = data;
+      this.username = data.username;
+      this.role = data.role;
+      this.saveToStorage();
+      return data;
+    },
+
     setSession(data) {
       this.accessToken = data.accessToken;
       this.refreshToken = data.refreshToken ?? this.refreshToken;
       this.username = data.username ?? this.username;
       this.role = data.role ?? this.role;
+      this.saveToStorage();
+    },
 
-      localStorage.setItem('accessToken', this.accessToken);
-      localStorage.setItem('refreshToken', this.refreshToken);
-      localStorage.setItem('username', this.username);
-      localStorage.setItem('role', this.role);
+    saveToStorage() {
+      for (const key of STORAGE_KEYS) {
+        if (this[key]) {
+          localStorage.setItem(key, this[key]);
+        } else {
+          localStorage.removeItem(key);
+        }
+      }
     },
 
     logout() {
+      if (this.refreshToken) {
+        axios.post('/api/auth/logout', { refreshToken: this.refreshToken }).catch(() => {});
+      }
       this.accessToken = null;
       this.refreshToken = null;
       this.username = null;
       this.role = null;
-      localStorage.clear();
+      this.profile = null;
+      this.saveToStorage();
     }
   }
 });
-

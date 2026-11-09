@@ -1,127 +1,111 @@
-# ITMO University - Web Programming Lab №4: Student Management System (Vue 3 + Pinia + RxJS + Spring Boot 3)
+# Лабораторная работа №4 — Student Manager (Vue)
 
-## Overview
-ITMO University Web Programming Course - Laboratory Work №4.
-A student dormitory management web application built with Vue 3 (Composition API, Pinia, RxJS) and Spring Boot 3 running in Docker containers.
+Frontend для системы управления студентами из ЛР №1, переписанный на Vue 3.
+Работает с REST API из ЛР №3 (Spring Boot + PostgreSQL).
 
----
+Вариант: **Vue**.
 
-## Architecture & Technology Stack
+## Что используется
 
-### Backend
-- **Framework:** Spring Boot 3 (Java 17+)
-- **Data Access:** jOOQ (Type-safe SQL query generation and execution)
-- **Database:** PostgreSQL 16
-- **Database Migrations:** Flyway
-- **Security:** Spring Security 6 + JWT (Stateless token-based authentication with Access and Refresh tokens)
-- **Validation:** Jakarta Validation (`@Valid`, constraints)
-- **API Documentation:** SpringDoc OpenAPI 3 / Swagger UI
+Frontend:
+- Vue 3 (Composition API, `<script setup>`)
+- Vue Router — страницы `/` (студенты), `/login` (вход), `/register` (регистрация), `/profile` (профиль)
+- Pinia — глобальное состояние (`stores/auth.js`, `stores/students.js`)
+- RxJS — поиск/фильтрация с debounce и отменой старых запросов, защита форм от повторной отправки
+- axios — запросы к API, автоматическое обновление access-токена через refresh-токен
 
-### Frontend
-- **Framework:** Vue 3 (Composition API, `<script setup>`)
-- **State Management:** Pinia
-- **Reactive Stream Handling:** RxJS
-- **Bundler & Tooling:** Vite + Modern JavaScript
+Backend (ЛР №3): Spring Boot 3, Spring Security + JWT, jOOQ, Flyway, PostgreSQL.
 
----
+## Где что лежит
 
-## Project Structure
-
-```text
-.
-├── backend/                               # Spring Boot 3 backend service
-│   ├── Dockerfile                         # Backend container build specification
-│   ├── pom.xml                            # Maven dependencies & build configuration
-│   └── src/
-│       └── main/
-│           ├── java/ru/itmo/studentmanager/
-│           │   ├── config/                # Security & OpenAPI configuration
-│           │   ├── controller/            # REST Controllers (Auth, Student)
-│           │   ├── dto/                   # Data Transfer Objects
-│           │   ├── exception/             # Global error handling & custom exceptions
-│           │   ├── model/                 # Domain Records & Entities (Student, User, RefreshToken)
-│           │   ├── repository/            # jOOQ Database Access Layer
-│           │   ├── security/              # JWT provider, filter, and user details service
-│           │   └── service/               # Business logic services
-│           └── resources/
-│               ├── application.yml        # Application runtime properties
-│               └── db/migration/          # Flyway SQL migrations
-├── docker-compose.yml                     # Multi-container orchestration (PostgreSQL + Backend)
-├── .env.example                           # Template for required environment variables
-├── .gitignore                             # Comprehensive Git ignore rules
-├── StudentManager.postman_collection.json # Ready-to-import Postman API test collection
-└── README.md                              # Project documentation
+```
+backend/                 Spring Boot приложение (ЛР №3)
+frontend/
+  src/views/             страницы (список студентов, логин, регистрация, профиль)
+  src/components/        модальные окна, фильтры, пагинация
+  src/composables/       логика на RxJS (useStudentList, useSubmit)
+  src/stores/            Pinia stores
+  src/services/          работа с API
+  src/utils/             обработка ошибок, обёртка запроса в Observable
+  nginx.conf             раздача собранного фронта и проксирование /api на backend
+docker-compose.yml
+.env.example
 ```
 
----
+## Запуск через Docker
 
-## Quick Start
+1. Скопировать пример конфигурации (можно и не делать — у всех переменных есть значения по умолчанию):
 
-### 1. Environment Setup
-Copy `.env.example` to create your local `.env` configuration:
 ```bash
 cp .env.example .env
 ```
 
-Default configuration variables:
-- `DB_URL`: `jdbc:postgresql://localhost:5432/student_db`
-- `DB_USERNAME`: `postgres`
-- `DB_PASSWORD`: `postgres`
-- `JWT_SECRET`: 256-bit secure key
-- `JWT_ACCESS_EXPIRATION_MS`: `900000` (15 minutes)
-- `JWT_REFRESH_EXPIRATION_MS`: `604800000` (7 days)
+2. Собрать и запустить:
 
-### 2. Running with Docker Compose
-Start PostgreSQL, Backend, and Frontend services with a single command:
 ```bash
-docker compose up --build -d
+docker compose up --build
 ```
-- **Frontend SPA:** `http://localhost:8081`
-- **Backend API & Swagger UI:** `http://localhost:8080/swagger-ui.html`
 
-To stop containers:
+После запуска:
+- приложение: http://localhost:8081
+- backend API: http://localhost:8080/api
+- Swagger: http://localhost:8080/swagger-ui.html
+
+3. Остановить:
+
 ```bash
 docker compose down
 ```
 
-### 3. Running Locally for Development
+Чтобы удалить ещё и данные БД:
 
-**Backend:**
-Ensure PostgreSQL is running on port `5432`, then:
 ```bash
-cd backend
-mvn clean spring-boot:run
+docker compose down -v
 ```
 
-**Frontend:**
-In a separate terminal:
+## Переменные окружения (.env)
+
+| Переменная | Описание | По умолчанию |
+|---|---|---|
+| `POSTGRES_DB` | имя базы | `students` |
+| `POSTGRES_USER` | пользователь БД | `students_user` |
+| `POSTGRES_PASSWORD` | пароль БД | `students_pass` |
+| `JWT_SECRET` | ключ подписи JWT (не меньше 32 символов) | — |
+| `JWT_ACCESS_EXPIRATION_MS` | время жизни access-токена | `900000` (15 мин) |
+| `JWT_REFRESH_EXPIRATION_MS` | время жизни refresh-токена | `604800000` (7 дней) |
+| `BACKEND_PORT` | порт backend на хосте | `8080` |
+| `FRONTEND_PORT` | порт frontend на хосте | `8081` |
+
+## Локальный запуск без Docker
+
+Нужен PostgreSQL на `localhost:5432` (база `student_db`, пользователь/пароль `postgres`, либо задать `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`).
+
+```bash
+cd backend
+mvn spring-boot:run
+```
+
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-Accessible at `http://localhost:3000` (API calls are proxied to `http://localhost:8080`).
 
----
+Фронт откроется на http://localhost:3000, запросы `/api` проксируются на `localhost:8080`.
 
-## API Documentation & Endpoints
+## Пользователи по умолчанию
 
-### Authentication (`/api/auth`)
-- `POST /api/auth/register` - Register a new user account (`USER` or `ADMIN`)
-- `POST /api/auth/login` - Authenticate and retrieve Access + Refresh tokens
-- `POST /api/auth/refresh` - Rotate and issue new Access token using Refresh token
+| Логин | Пароль | Роль |
+|---|---|---|
+| `admin` | `admin123` | ADMIN — может добавлять, редактировать и удалять студентов |
+| `student_user` | `user123` | USER — только просмотр |
 
-### Students (`/api/students`)
-- `GET /api/students` - Retrieve filtered students (supports query parameters: `fullName`, `group`, `dormitoryNumber`, `room`, `isuId`, `sortBy`, `order`, `limit`, `offset`)
-- `POST /api/students/search` - Search students with JSON query body
-- `GET /api/students/{isuId}` - Retrieve student dossier by ISU ID
-- `POST /api/students` - Create a new student (requires `ADMIN` role)
-- `PUT /api/students/{isuId}` / `PATCH /api/students/{isuId}` - Update existing student record (requires `ADMIN` role)
-- `DELETE /api/students/{isuId}` - Remove student record (requires `ADMIN` role)
+Роль (USER или ADMIN) выбирается при регистрации, как в ЛР №3.
 
----
+## API
 
-## Default Accounts
-- **Admin:** `admin` / `admin123` (`ADMIN` role)
-- **User:** `student_user` / `user123` (`USER` role)
-
+- `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/refresh`, `POST /api/auth/logout`
+- `GET /api/users/me` — текущий пользователь
+- `GET /api/students` — список с фильтрами (`search`, `isuId`, `fullName`, `group`, `dormitoryNumber`, `room`, `accommodationFrom`, `accommodationTo`, `isInternational`, `notes`), сортировкой (`sortBy`, `order`) и пагинацией (`limit`, `offset`). Общее количество записей возвращается в заголовке `X-Total-Count`.
+- `GET /api/students/{isuId}`
+- `POST /api/students`, `PUT/PATCH /api/students/{isuId}`, `DELETE /api/students/{isuId}` — только ADMIN

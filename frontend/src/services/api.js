@@ -7,7 +7,6 @@ const api = axios.create({
   timeout: 10000
 });
 
-// Attach authorization header
 api.interceptors.request.use((config) => {
   const auth = useAuthStore();
   if (auth.accessToken) {
@@ -16,7 +15,13 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Silent token refresh on 401
+function goToLogin() {
+  const current = router.currentRoute.value;
+  if (current.name !== 'login') {
+    router.push({ name: 'login', query: { redirect: current.fullPath, expired: '1' } });
+  }
+}
+
 let refreshPromise = null;
 
 api.interceptors.response.use(
@@ -24,28 +29,34 @@ api.interceptors.response.use(
   async (error) => {
     const original = error.config;
     const auth = useAuthStore();
-    const isAuthRequest = original?.url?.includes('/auth/');
+    const isAuthRequest = original?.url?.startsWith('/auth/');
 
-    if (error.response?.status === 401 && !original._retry && auth.refreshToken && !isAuthRequest) {
-      original._retry = true;
-      try {
-        refreshPromise ??= auth.refresh().finally(() => {
+    if (error.response?.status !== 401 || isAuthRequest || !original) {
+      return Promise.reject(error);
+    }
+
+    if (original._retry || !auth.refreshToken) {
+      auth.logout();
+      goToLogin();
+      return Promise.reject(error);
+    }
+
+    original._retry = true;
+    try {
+      if (!refreshPromise) {
+        refreshPromise = auth.refresh().finally(() => {
           refreshPromise = null;
         });
-        await refreshPromise;
-        original.headers.Authorization = `Bearer ${auth.accessToken}`;
-        return api(original);
-      } catch (refreshError) {
-        auth.logout();
-        if (router.currentRoute.value.name !== 'login') {
-          router.push({ name: 'login' });
-        }
-        return Promise.reject(refreshError);
       }
+      await refreshPromise;
+      original.headers.Authorization = `Bearer ${auth.accessToken}`;
+      return api(original);
+    } catch (refreshError) {
+      auth.logout();
+      goToLogin();
+      return Promise.reject(error);
     }
-    return Promise.reject(error);
   }
 );
 
 export default api;
-
