@@ -48,8 +48,8 @@ docker compose up --build
 
 После запуска:
 - приложение: http://localhost:8081
-- backend API: http://localhost:8080/api
-- Swagger: http://localhost:8080/swagger-ui.html
+- backend API (через nginx): http://localhost:8081/api
+- Swagger: http://localhost:8081/swagger-ui.html
 
 3. Остановить:
 
@@ -73,7 +73,6 @@ docker compose down -v
 | `JWT_SECRET` | ключ подписи JWT (не меньше 32 символов) | — |
 | `JWT_ACCESS_EXPIRATION_MS` | время жизни access-токена | `900000` (15 мин) |
 | `JWT_REFRESH_EXPIRATION_MS` | время жизни refresh-токена | `604800000` (7 дней) |
-| `BACKEND_PORT` | порт backend на хосте | `8080` |
 | `FRONTEND_PORT` | порт frontend на хосте | `8081` |
 
 ## Локальный запуск без Docker

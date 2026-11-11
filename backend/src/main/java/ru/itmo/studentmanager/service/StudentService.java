@@ -1,5 +1,6 @@
 package ru.itmo.studentmanager.service;
 
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import ru.itmo.studentmanager.dto.StudentRequestDto;
 import ru.itmo.studentmanager.dto.StudentResponseDto;
@@ -51,8 +52,12 @@ public class StudentService {
                 dto.isInternational(),
                 dto.notes()
         );
-        Student saved = repo.save(student);
-        return toResponseDto(saved);
+        try {
+            Student saved = repo.save(student);
+            return toResponseDto(saved);
+        } catch (DuplicateKeyException e) {
+            throw new DuplicateResourceException("Student with this ISU ID already exists");
+        }
     }
 
     public StudentResponseDto updateStudent(String isuId, StudentUpdateDto dto) {
