@@ -15,6 +15,8 @@ import java.util.UUID;
 @Component
 public class JwtTokenProvider {
 
+    private static final int MIN_SECRET_BYTES = 32;
+
     private final SecretKey signingKey;
     private final long accessExpirationMs;
     private final long refreshExpirationMs;
@@ -24,7 +26,11 @@ public class JwtTokenProvider {
             @Value("${jwt.access-expiration-ms}") long accessExpirationMs,
             @Value("${jwt.refresh-expiration-ms}") long refreshExpirationMs
     ) {
-        this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        byte[] keyBytes = secret == null ? new byte[0] : secret.getBytes(StandardCharsets.UTF_8);
+        if (keyBytes.length < MIN_SECRET_BYTES) {
+            throw new IllegalStateException("JWT_SECRET must be at least " + MIN_SECRET_BYTES + " bytes long");
+        }
+        this.signingKey = Keys.hmacShaKeyFor(keyBytes);
         this.accessExpirationMs = accessExpirationMs;
         this.refreshExpirationMs = refreshExpirationMs;
     }

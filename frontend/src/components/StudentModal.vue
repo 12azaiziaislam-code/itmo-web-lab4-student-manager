@@ -1,72 +1,71 @@
 <template>
-  <template v-if="isOpen">
-    <div class="modal">
-      <h3>{{ isEditMode ? 'Edit Student' : 'Add Student' }}</h3>
-      <div v-if="serverError" class="alert-error">{{ serverError }}</div>
+  <BaseModal :is-open="isOpen" :closable="!isSubmitting" @close="handleClose">
+    <h3>{{ isEditMode ? 'Edit Student' : 'Add Student' }}</h3>
+    <div v-if="serverError" class="alert-error">{{ serverError }}</div>
 
-      <form @submit.prevent="handleSubmit" novalidate>
-        <div class="form-group">
-          <label for="fullName">Full Name *</label>
-          <input id="fullName" v-model="form.fullName" type="text" maxlength="50" />
-          <small v-if="errors.fullName" class="error-msg">{{ errors.fullName }}</small>
-        </div>
+    <form @submit.prevent="handleSubmit" novalidate>
+      <div class="form-group">
+        <label for="fullName">Full Name *</label>
+        <input id="fullName" v-model="form.fullName" type="text" maxlength="50" />
+        <small v-if="errors.fullName" class="error-msg">{{ errors.fullName }}</small>
+      </div>
 
-        <div class="form-group">
-          <label for="group">Group *</label>
-          <input id="group" v-model="form.group" type="text" maxlength="5" />
-          <small v-if="errors.group" class="error-msg">{{ errors.group }}</small>
-        </div>
+      <div class="form-group">
+        <label for="group">Group *</label>
+        <input id="group" v-model="form.group" type="text" maxlength="5" />
+        <small v-if="errors.group" class="error-msg">{{ errors.group }}</small>
+      </div>
 
-        <div class="form-group">
-          <label for="isuId">ISU ID (6 digits) *</label>
-          <input id="isuId" v-model="form.isuId" type="text" maxlength="6" :readonly="isEditMode" />
-          <small v-if="errors.isuId" class="error-msg">{{ errors.isuId }}</small>
-        </div>
+      <div class="form-group">
+        <label for="isuId">ISU ID (6 digits) *</label>
+        <input id="isuId" v-model="form.isuId" type="text" maxlength="6" :readonly="isEditMode" />
+        <small v-if="errors.isuId" class="error-msg">{{ errors.isuId }}</small>
+      </div>
 
-        <div class="form-group">
-          <label for="dormitoryNumber">Dormitory Number (1-99) *</label>
-          <input id="dormitoryNumber" v-model.number="form.dormitoryNumber" type="number" min="1" max="99" />
-          <small v-if="errors.dormitoryNumber" class="error-msg">{{ errors.dormitoryNumber }}</small>
-        </div>
+      <div class="form-group">
+        <label for="dormitoryNumber">Dormitory Number (1-99) *</label>
+        <input id="dormitoryNumber" v-model.number="form.dormitoryNumber" type="number" min="1" max="99" />
+        <small v-if="errors.dormitoryNumber" class="error-msg">{{ errors.dormitoryNumber }}</small>
+      </div>
 
-        <div class="form-group">
-          <label for="room">Room Number (1-9999) *</label>
-          <input id="room" v-model.number="form.room" type="number" min="1" max="9999" />
-          <small v-if="errors.room" class="error-msg">{{ errors.room }}</small>
-        </div>
+      <div class="form-group">
+        <label for="room">Room Number (1-9999) *</label>
+        <input id="room" v-model.number="form.room" type="number" min="1" max="9999" />
+        <small v-if="errors.room" class="error-msg">{{ errors.room }}</small>
+      </div>
 
-        <div class="form-group">
-          <label for="accommodationPeriod">Accommodation Period *</label>
-          <input id="accommodationPeriod" v-model="form.accommodationPeriod" type="date" min="2020-01-01" max="2035-12-31" />
-          <small v-if="errors.accommodationPeriod" class="error-msg">{{ errors.accommodationPeriod }}</small>
-        </div>
+      <div class="form-group">
+        <label for="accommodationPeriod">Accommodation Period *</label>
+        <input id="accommodationPeriod" v-model="form.accommodationPeriod" type="date" min="2020-01-01" max="2035-12-31" />
+        <small v-if="errors.accommodationPeriod" class="error-msg">{{ errors.accommodationPeriod }}</small>
+      </div>
 
-        <div class="form-group checkbox-group">
-          <label for="isInternational">
-            <input id="isInternational" v-model="form.isInternational" type="checkbox" />
-            <span>International Student</span>
-          </label>
-        </div>
+      <div class="form-group checkbox-group">
+        <label for="isInternational">
+          <input id="isInternational" v-model="form.isInternational" type="checkbox" />
+          <span>International Student</span>
+        </label>
+      </div>
 
-        <div class="form-group">
-          <label for="notes">Notes (Max 150 characters)</label>
-          <textarea id="notes" v-model="form.notes" rows="3" maxlength="150"></textarea>
-          <small v-if="errors.notes" class="error-msg">{{ errors.notes }}</small>
-        </div>
+      <div class="form-group">
+        <label for="notes">Notes (Max 150 characters)</label>
+        <textarea id="notes" v-model="form.notes" rows="3" maxlength="150"></textarea>
+        <small v-if="errors.notes" class="error-msg">{{ errors.notes }}</small>
+      </div>
 
-        <div class="modal-buttons">
-          <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
-            {{ isSubmitting ? 'Saving...' : 'Save' }}
-          </button>
-          <button type="button" class="btn btn-secondary" :disabled="isSubmitting" @click="handleClose">Cancel</button>
-        </div>
-      </form>
-    </div>
-  </template>
+      <div class="modal-buttons">
+        <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
+          {{ isSubmitting ? 'Saving...' : 'Save' }}
+        </button>
+        <button type="button" class="btn btn-secondary" :disabled="isSubmitting" @click="handleClose">Cancel</button>
+      </div>
+    </form>
+  </BaseModal>
 </template>
 
 <script setup>
 import { ref, computed, watch } from 'vue';
+import BaseModal from './BaseModal.vue';
 import { useStudentStore } from '../stores/students';
 import { useSubmit } from '../composables/useSubmit';
 import { getErrorMessage } from '../utils/errors';

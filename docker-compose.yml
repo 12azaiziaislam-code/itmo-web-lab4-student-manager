@@ -25,7 +25,7 @@ services:
       DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-students}
       DB_USERNAME: ${POSTGRES_USER:-students_user}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-students_pass}
-      JWT_SECRET: ${JWT_SECRET:-local_dev_secret_key_for_lab4_please_change_it_2026}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is not set. Copy .env.example to .env}
       JWT_ACCESS_EXPIRATION_MS: ${JWT_ACCESS_EXPIRATION_MS:-900000}
       JWT_REFRESH_EXPIRATION_MS: ${JWT_REFRESH_EXPIRATION_MS:-604800000}
     depends_on:

@@ -1,32 +1,31 @@
 <template>
-  <template v-if="isOpen">
-    <div class="modal">
-      <h3>Student Dossier</h3>
+  <BaseModal :is-open="isOpen" @close="$emit('close')">
+    <h3>Student Dossier</h3>
 
-      <p v-if="loading">Loading...</p>
-      <div v-else-if="error" class="alert-error">{{ error }}</div>
+    <p v-if="loading">Loading...</p>
+    <div v-else-if="error" class="alert-error">{{ error }}</div>
 
-      <template v-else-if="student">
-        <p><strong>Full Name:</strong> {{ student.fullName }}</p>
-        <p><strong>Group:</strong> {{ student.group }}</p>
-        <p><strong>ISU Number:</strong> {{ student.isuId }}</p>
-        <p><strong>Dormitory:</strong> {{ student.dormitoryNumber }}</p>
-        <p><strong>Room Number:</strong> {{ student.room }}</p>
-        <p><strong>Accommodation Period:</strong> {{ formatDate(student.accommodationPeriod) }}</p>
-        <p><strong>Foreign Student:</strong> {{ student.isInternational ? 'Yes' : 'No' }}</p>
-        <p><strong>Notes:</strong> {{ student.notes || '-' }}</p>
-      </template>
+    <template v-else-if="student">
+      <p><strong>Full Name:</strong> {{ student.fullName }}</p>
+      <p><strong>Group:</strong> {{ student.group }}</p>
+      <p><strong>ISU Number:</strong> {{ student.isuId }}</p>
+      <p><strong>Dormitory:</strong> {{ student.dormitoryNumber }}</p>
+      <p><strong>Room Number:</strong> {{ student.room }}</p>
+      <p><strong>Accommodation Period:</strong> {{ formatDate(student.accommodationPeriod) }}</p>
+      <p><strong>Foreign Student:</strong> {{ student.isInternational ? 'Yes' : 'No' }}</p>
+      <p><strong>Notes:</strong> {{ student.notes || '-' }}</p>
+    </template>
 
-      <div class="modal-buttons">
-        <button v-if="isAdmin && student" type="button" class="btn btn-primary" @click="$emit('edit', student)">Edit</button>
-        <button type="button" class="btn btn-secondary" @click="$emit('close')">Close</button>
-      </div>
+    <div class="modal-buttons">
+      <button v-if="isAdmin && student" type="button" class="btn btn-primary" @click="$emit('edit', student)">Edit</button>
+      <button type="button" class="btn btn-secondary" @click="$emit('close')">Close</button>
     </div>
-  </template>
+  </BaseModal>
 </template>
 
 <script setup>
 import { ref, watch, onUnmounted } from 'vue';
+import BaseModal from './BaseModal.vue';
 import studentService from '../services/studentService';
 import { fromRequest } from '../utils/rx';
 import { getErrorMessage } from '../utils/errors';
