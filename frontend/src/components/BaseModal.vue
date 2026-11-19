@@ -23,7 +23,6 @@ const props = defineProps({
 
 const emit = defineEmits(['close']);
 
-// close only if the mouse was pressed and released on the backdrop
 const pressedOnBackdrop = ref(false);
 
 function requestClose() {

@@ -11,7 +11,6 @@ export function fromRequest(request) {
       })
       .catch((err) => subscriber.error(err));
 
-    // cancel old request
     return () => controller.abort();
   });
 }

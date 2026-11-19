@@ -1,7 +1,6 @@
 import { ref, onUnmounted } from 'vue';
 import { Subject, from, exhaustMap, finalize } from 'rxjs';
 
-// while saving, new clicks are ignored
 export function useSubmit(action) {
   const isSubmitting = ref(false);
   const clicks$ = new Subject();
