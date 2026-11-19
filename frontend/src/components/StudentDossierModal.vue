@@ -25,11 +25,14 @@
 
 <script setup>
 import { ref, watch, onUnmounted } from 'vue';
+import { timer, switchMap } from 'rxjs';
 import BaseModal from './BaseModal.vue';
 import studentService from '../services/studentService';
 import { fromRequest } from '../utils/rx';
 import { getErrorMessage } from '../utils/errors';
 import { formatDate } from '../utils/format';
+
+const POLL_INTERVAL_MS = 5000;
 
 const props = defineProps({
   isOpen: { type: Boolean, default: false },
@@ -54,7 +57,9 @@ watch(
     if (!open || !isuId) return;
 
     loading.value = true;
-    subscription = fromRequest((signal) => studentService.getStudentByIsu(isuId, signal)).subscribe({
+    subscription = timer(0, POLL_INTERVAL_MS)
+      .pipe(switchMap(() => fromRequest((signal) => studentService.getStudentByIsu(isuId, signal))))
+      .subscribe({
       next: (data) => {
         student.value = data;
         loading.value = false;
