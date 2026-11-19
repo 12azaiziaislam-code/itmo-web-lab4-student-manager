@@ -1,9 +1,11 @@
 import { onMounted, onUnmounted } from 'vue';
-import { Subject, merge, EMPTY, debounceTime, tap, switchMap, catchError } from 'rxjs';
+import { Subject, merge, EMPTY, interval, debounceTime, filter, tap, switchMap, catchError } from 'rxjs';
 import { useStudentStore } from '../stores/students';
 import studentService from '../services/studentService';
 import { fromRequest } from '../utils/rx';
 import { getErrorMessage } from '../utils/errors';
+
+const POLL_INTERVAL_MS = 5000;
 
 export function useStudentList() {
   const store = useStudentStore();
@@ -18,11 +20,17 @@ export function useStudentList() {
     })
   );
 
-  const students$ = merge(filtersChanged$, reload$).pipe(
-    tap(() => {
-      store.loading = true;
-      store.error = null;
-    }),
+  const poll$ = interval(POLL_INTERVAL_MS).pipe(filter(() => !document.hidden));
+
+  const students$ = merge(
+    merge(filtersChanged$, reload$).pipe(
+      tap(() => {
+        store.loading = true;
+        store.error = null;
+      })
+    ),
+    poll$
+  ).pipe(
     switchMap(() =>
       fromRequest((signal) => studentService.getStudents(store.filters, signal)).pipe(
         catchError((err) => {
